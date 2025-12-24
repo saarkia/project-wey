@@ -22,7 +22,9 @@ import {
   LogOut,
   Send,
   Shield,
-  Trash2
+  Trash2,
+  Camera,
+  Settings
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
@@ -242,11 +244,20 @@ const EventRow = ({ event }) => (
 
 const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
   <div onClick={onClick} className="bg-white p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors">
-    <div className="flex items-center justify-between mb-1">
-      <div className="flex items-center space-x-2 text-xs text-slate-500">
-        <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
-        <span>• Posted by {thread.author_username}</span>
-        <span>• {formatTimeAgo(thread.created_at)}</span>
+    <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center space-x-2">
+        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {thread.author_avatar ? (
+            <img src={thread.author_avatar} alt={thread.author_username} className="w-full h-full object-cover" />
+          ) : (
+            <User size={16} className="text-teal-700" />
+          )}
+        </div>
+        <div className="flex items-center space-x-2 text-xs text-slate-500">
+          <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
+          <span>• Posted by {thread.author_username}</span>
+          <span>• {formatTimeAgo(thread.created_at)}</span>
+        </div>
       </div>
       {isAdmin && (
         <button
@@ -263,7 +274,7 @@ const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
     </div>
     <h3 className="font-bold text-slate-800 mb-1">{thread.title}</h3>
     <p className="text-slate-600 text-sm mb-2 line-clamp-1">{thread.content}</p>
-    <div className="flex items-center text-slate-400 text-xs">
+    <div className="flex items-center text-slate-400 text-xs ml-10">
       <MessageSquare size={12} className="mr-1" />
       {thread.reply_count || 0} replies
     </div>
@@ -274,8 +285,12 @@ const ReplyCard = ({ reply, isAdmin, onDelete }) => (
   <div className="bg-white p-4 rounded-lg border border-slate-200">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-          <User size={16} className="text-teal-700" />
+        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {reply.author_avatar ? (
+            <img src={reply.author_avatar} alt={reply.author_username} className="w-full h-full object-cover" />
+          ) : (
+            <User size={16} className="text-teal-700" />
+          )}
         </div>
         <div>
           <span className="font-bold text-slate-800 text-sm">{reply.author_username}</span>
@@ -296,7 +311,7 @@ const ReplyCard = ({ reply, isAdmin, onDelete }) => (
   </div>
 );
 
-const ThreadDetail = ({ thread, onBack, user, onReplySubmit, isAdmin, onDeleteReply }) => {
+const ThreadDetail = ({ thread, onBack, user, userProfile, onReplySubmit, isAdmin, onDeleteReply }) => {
   const [replies, setReplies] = useState([]);
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -310,12 +325,19 @@ const ThreadDetail = ({ thread, onBack, user, onReplySubmit, isAdmin, onDeleteRe
     setLoading(true);
     const { data, error } = await supabase
       .from('forum_replies')
-      .select('*')
+      .select(`
+        *,
+        author:profiles!author_id(username, avatar_url)
+      `)
       .eq('thread_id', thread.id)
       .order('created_at', { ascending: true });
 
     if (!error && data) {
-      setReplies(data);
+      const repliesWithAuthor = data.map(reply => ({
+        ...reply,
+        author_avatar: reply.author?.avatar_url || null
+      }));
+      setReplies(repliesWithAuthor);
     }
     setLoading(false);
   };
@@ -331,7 +353,7 @@ const ThreadDetail = ({ thread, onBack, user, onReplySubmit, isAdmin, onDeleteRe
         thread_id: thread.id,
         content: replyContent.trim(),
         author_id: user.id,
-        author_username: user.email.split('@')[0]
+        author_username: userProfile?.username || user.email.split('@')[0]
       }]);
 
     if (!error) {
@@ -363,8 +385,12 @@ const ThreadDetail = ({ thread, onBack, user, onReplySubmit, isAdmin, onDeleteRe
         {/* Original Post */}
         <div className="bg-teal-50 p-4 rounded-lg border border-teal-100">
           <div className="flex items-center space-x-2 mb-3">
-            <div className="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center">
-              <User size={20} className="text-teal-800" />
+            <div className="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center overflow-hidden">
+              {thread.author_avatar ? (
+                <img src={thread.author_avatar} alt={thread.author_username} className="w-full h-full object-cover" />
+              ) : (
+                <User size={20} className="text-teal-800" />
+              )}
             </div>
             <div>
               <span className="font-bold text-slate-900">{thread.author_username}</span>
@@ -520,6 +546,142 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
+const ProfileEditModal = ({ isOpen, onClose, userProfile, onProfileUpdated }) => {
+  const [username, setUsername] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (userProfile) {
+      setUsername(userProfile.username || '');
+      setAvatarPreview(userProfile.avatar_url || '');
+    }
+  }, [userProfile]);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image must be less than 2MB');
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      setError('');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!username.trim()) {
+      setError('Username is required');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      let avatarUrl = userProfile.avatar_url;
+
+      // Upload avatar if a new file was selected
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${userProfile.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        avatarUrl = publicUrl;
+      }
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          username: username.trim(),
+          avatar_url: avatarUrl
+        })
+        .eq('id', userProfile.id);
+
+      if (updateError) throw updateError;
+
+      onProfileUpdated();
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Avatar Upload */}
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User size={40} className="text-teal-700" />
+              )}
+            </div>
+            <label className="absolute bottom-0 right-0 bg-teal-600 text-white p-2 rounded-full cursor-pointer hover:bg-teal-700 shadow-lg transition-colors">
+              <Camera size={16} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">Click camera to upload (max 2MB)</p>
+        </div>
+
+        {/* Username */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Username</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+            placeholder="Your display name"
+            required
+          />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading && <Loader size={18} className="animate-spin" />}
+          {loading ? 'Saving...' : 'Save Profile'}
+        </button>
+      </form>
+    </Modal>
+  );
+};
+
 /* --- MAIN APP --- */
 
 export default function App() {
@@ -534,6 +696,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
 
   // Forum state
   const [threads, setThreads] = useState([]);
@@ -676,14 +839,16 @@ export default function App() {
       .from('forum_threads')
       .select(`
         *,
-        reply_count:forum_replies(count)
+        reply_count:forum_replies(count),
+        author:profiles!author_id(username, avatar_url)
       `)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
       const threadsWithCount = data.map(thread => ({
         ...thread,
-        reply_count: thread.reply_count?.[0]?.count || 0
+        reply_count: thread.reply_count?.[0]?.count || 0,
+        author_avatar: thread.author?.avatar_url || null
       }));
       setThreads(threadsWithCount);
     }
@@ -704,7 +869,7 @@ export default function App() {
         title: newThreadTitle.trim(),
         content: newThreadContent.trim(),
         author_id: user.id,
-        author_username: user.email.split('@')[0]
+        author_username: userProfile?.username || user.email.split('@')[0]
       }]);
 
     if (!error) {
@@ -896,6 +1061,7 @@ export default function App() {
               loadThreads();
             }}
             user={user}
+            userProfile={userProfile}
             onReplySubmit={() => loadThreads()}
             isAdmin={isAdmin}
             onDeleteReply={handleDeleteReply}
@@ -911,13 +1077,22 @@ export default function App() {
                   <p className="text-slate-500 text-sm">Ask locals, get answers. Moderated daily.</p>
                 </div>
                 {user ? (
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded"
-                  >
-                    <LogOut size={12} />
-                    Sign Out
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsProfileEditOpen(true)}
+                      className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 border border-teal-200 px-2 py-1 rounded hover:bg-teal-50"
+                    >
+                      <Settings size={12} />
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded"
+                    >
+                      <LogOut size={12} />
+                      Sign Out
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => setIsAuthOpen(true)}
@@ -1036,6 +1211,14 @@ export default function App() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onSuccess={() => loadThreads()}
+      />
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal
+        isOpen={isProfileEditOpen}
+        onClose={() => setIsProfileEditOpen(false)}
+        userProfile={userProfile}
+        onProfileUpdated={() => loadUserProfile(user.id)}
       />
 
       {/* Submission Modal */}
