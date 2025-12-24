@@ -689,7 +689,7 @@ export default function App() {
                 </h2>
                 <button onClick={() => setActiveTab('guide')} className="text-xs font-bold text-teal-600 flex items-center">Open Guide <ChevronRight size={14}/></button>
               </div>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                 {PLACES.slice(0, 2).map(place => <PlaceCard key={place.id} place={place} />)}
               </div>
             </div>
@@ -717,7 +717,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredPlaces.length > 0 ? (
                 filteredPlaces.map(place => (
                   <PlaceCard key={place.id} place={place} />
@@ -830,7 +830,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-slate-50 shadow-2xl overflow-hidden font-sans border-x border-slate-200 relative">
+    <div className="flex flex-col h-screen w-full md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto bg-slate-50 md:shadow-2xl overflow-hidden font-sans md:border-x border-slate-200 relative">
 
       {/* Top Header (only for non-home pages to keep home clean) */}
       {activeTab !== 'home' && activeTab !== 'guide' && activeTab !== 'forum' && (
