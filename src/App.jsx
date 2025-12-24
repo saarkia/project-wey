@@ -20,7 +20,9 @@ import {
   ArrowLeft,
   User,
   LogOut,
-  Send
+  Send,
+  Shield,
+  Trash2
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
@@ -238,11 +240,26 @@ const EventRow = ({ event }) => (
   </div>
 );
 
-const ThreadRow = ({ thread, onClick }) => (
+const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
   <div onClick={onClick} className="bg-white p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors">
-    <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-      <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
-      <span>• Posted by {thread.author_username} • {formatTimeAgo(thread.created_at)}</span>
+    <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center space-x-2 text-xs text-slate-500">
+        <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
+        <span>• Posted by {thread.author_username}</span>
+        <span>• {formatTimeAgo(thread.created_at)}</span>
+      </div>
+      {isAdmin && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(thread.id);
+          }}
+          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-colors"
+          title="Delete thread"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
     <h3 className="font-bold text-slate-800 mb-1">{thread.title}</h3>
     <p className="text-slate-600 text-sm mb-2 line-clamp-1">{thread.content}</p>
@@ -253,22 +270,33 @@ const ThreadRow = ({ thread, onClick }) => (
   </div>
 );
 
-const ReplyCard = ({ reply }) => (
+const ReplyCard = ({ reply, isAdmin, onDelete }) => (
   <div className="bg-white p-4 rounded-lg border border-slate-200">
-    <div className="flex items-center space-x-2 mb-2">
-      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-        <User size={16} className="text-teal-700" />
+    <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center space-x-2">
+        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+          <User size={16} className="text-teal-700" />
+        </div>
+        <div>
+          <span className="font-bold text-slate-800 text-sm">{reply.author_username}</span>
+          <span className="text-slate-400 text-xs ml-2">{formatTimeAgo(reply.created_at)}</span>
+        </div>
       </div>
-      <div>
-        <span className="font-bold text-slate-800 text-sm">{reply.author_username}</span>
-        <span className="text-slate-400 text-xs ml-2">{formatTimeAgo(reply.created_at)}</span>
-      </div>
+      {isAdmin && (
+        <button
+          onClick={() => onDelete(reply.id)}
+          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded transition-colors"
+          title="Delete reply"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
     <p className="text-slate-700 text-sm leading-relaxed">{reply.content}</p>
   </div>
 );
 
-const ThreadDetail = ({ thread, onBack, user, onReplySubmit }) => {
+const ThreadDetail = ({ thread, onBack, user, onReplySubmit, isAdmin, onDeleteReply }) => {
   const [replies, setReplies] = useState([]);
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -359,7 +387,7 @@ const ThreadDetail = ({ thread, onBack, user, onReplySubmit }) => {
             </div>
           ) : (
             replies.map(reply => (
-              <ReplyCard key={reply.id} reply={reply} />
+              <ReplyCard key={reply.id} reply={reply} isAdmin={isAdmin} onDelete={onDeleteReply} />
             ))
           )}
         </div>
@@ -504,6 +532,7 @@ export default function App() {
 
   // Auth state
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Forum state
@@ -526,14 +555,111 @@ export default function App() {
     ? PLACES
     : PLACES.filter(p => p.category === selectedCategory || p.tags.includes(selectedCategory));
 
+  // Load user profile (includes role)
+  const loadUserProfile = async (userId) => {
+    if (!userId) {
+      setUserProfile(null);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (!error && data) {
+      setUserProfile(data);
+    }
+  };
+
+  // Check if current user is admin
+  const isAdmin = userProfile?.role === 'admin';
+
+  // Delete thread with moderation logging
+  const handleDeleteThread = async (threadId, reason = 'Deleted by admin') => {
+    if (!isAdmin) return;
+
+    if (!confirm('Are you sure you want to delete this thread? This action cannot be undone.')) {
+      return;
+    }
+
+    // Log the deletion
+    await supabase
+      .from('moderation_log')
+      .insert([{
+        action: 'delete_thread',
+        content_type: 'forum_thread',
+        content_id: threadId,
+        moderator_id: user.id,
+        reason: reason
+      }]);
+
+    // Delete the thread
+    const { error } = await supabase
+      .from('forum_threads')
+      .delete()
+      .eq('id', threadId);
+
+    if (!error) {
+      await loadThreads();
+      if (selectedThread?.id === threadId) {
+        setSelectedThread(null);
+      }
+    } else {
+      alert('Failed to delete thread: ' + error.message);
+    }
+  };
+
+  // Delete reply with moderation logging
+  const handleDeleteReply = async (replyId, reason = 'Deleted by admin') => {
+    if (!isAdmin) return;
+
+    if (!confirm('Are you sure you want to delete this reply? This action cannot be undone.')) {
+      return;
+    }
+
+    // Log the deletion
+    await supabase
+      .from('moderation_log')
+      .insert([{
+        action: 'delete_reply',
+        content_type: 'forum_reply',
+        content_id: replyId,
+        moderator_id: user.id,
+        reason: reason
+      }]);
+
+    // Delete the reply
+    const { error } = await supabase
+      .from('forum_replies')
+      .delete()
+      .eq('id', replyId);
+
+    if (!error) {
+      // Reload threads to update reply count
+      await loadThreads();
+    } else {
+      alert('Failed to delete reply: ' + error.message);
+    }
+  };
+
   // Check auth on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      } else {
+        setUserProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -763,10 +889,17 @@ export default function App() {
 
       case 'forum':
         if (selectedThread) {
-          return <ThreadDetail thread={selectedThread} onBack={() => {
-            setSelectedThread(null);
-            loadThreads();
-          }} user={user} onReplySubmit={() => loadThreads()} />;
+          return <ThreadDetail
+            thread={selectedThread}
+            onBack={() => {
+              setSelectedThread(null);
+              loadThreads();
+            }}
+            user={user}
+            onReplySubmit={() => loadThreads()}
+            isAdmin={isAdmin}
+            onDeleteReply={handleDeleteReply}
+          />;
         }
 
         return (
@@ -817,7 +950,13 @@ export default function App() {
                 </div>
               ) : (
                 threads.map(thread => (
-                  <ThreadRow key={thread.id} thread={thread} onClick={() => setSelectedThread(thread)} />
+                  <ThreadRow
+                    key={thread.id}
+                    thread={thread}
+                    onClick={() => setSelectedThread(thread)}
+                    isAdmin={isAdmin}
+                    onDelete={handleDeleteThread}
+                  />
                 ))
               )}
             </div>
