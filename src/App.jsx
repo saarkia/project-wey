@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Calendar,
@@ -18,8 +18,11 @@ import {
   Sparkles,
   Loader,
   ArrowLeft,
-  User
+  User,
+  LogOut,
+  Send
 } from 'lucide-react';
+import { supabase } from './supabaseClient';
 
 /* --- GEMINI API HELPER --- */
 const callGemini = async (prompt, systemInstruction = "") => {
@@ -46,6 +49,22 @@ const callGemini = async (prompt, systemInstruction = "") => {
     console.error(error);
     return "Sorry, I'm having trouble connecting to the local brain right now. Please try again.";
   }
+};
+
+/* --- UTILITY FUNCTIONS --- */
+const formatTimeAgo = (timestamp) => {
+  const now = new Date();
+  const then = new Date(timestamp);
+  const seconds = Math.floor((now - then) / 1000);
+
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return then.toLocaleDateString();
 };
 
 /* --- MOCK DATA --- */
@@ -138,65 +157,6 @@ const EVENTS = [
   }
 ];
 
-const FORUM_THREADS = [
-  {
-    id: 1,
-    board: "Recommendations",
-    title: "Reliable plumber for emergency?",
-    author: "Sarah J.",
-    replies: 4,
-    time: "2h ago",
-    preview: "Has anyone used PlumbRight based in Addlestone? Need someone ASAP...",
-    content: "Has anyone used PlumbRight based in Addlestone? Need someone ASAP for a leaking radiator valve. Open to other recommendations if you've had good experiences!"
-  },
-  {
-    id: 2,
-    board: "Town Talk",
-    title: "Roadworks on Queen's Rd - Update",
-    author: "Local Dave",
-    replies: 12,
-    time: "5h ago",
-    preview: "Just walked past, looks like they are digging up the gas main again...",
-    content: "Just walked past, looks like they are digging up the gas main again on Queen's Road near the station. Anyone know how long this is expected to last? Traffic is backing up all the way to Monument Green."
-  },
-  {
-    id: 3,
-    board: "What's On",
-    title: "Fireworks night tickets",
-    author: "MomOfTwo",
-    replies: 1,
-    time: "1d ago",
-    preview: "Are the tickets for the rugby club fireworks on sale yet?",
-    content: "Are the tickets for the rugby club fireworks on sale yet? I checked their website but couldn't find any info. Does anyone know when they go on sale and how much they cost? Taking the kids this year!"
-  }
-];
-
-const THREAD_REPLIES = {
-  1: [
-    { id: 1, author: "Mike R.", time: "1h ago", content: "Used them last month, they were great! Came within 2 hours and very reasonable price." },
-    { id: 2, author: "Jane W.", time: "1h ago", content: "I'd recommend AquaFix in Weybridge. Available 24/7 and always reliable." },
-    { id: 3, author: "Tom B.", time: "45m ago", content: "PlumbRight are good but can be pricey. Try Weybridge Plumbing Services, they're local and very fair." },
-    { id: 4, author: "Sarah J.", time: "30m ago", content: "Thanks everyone! I'll try AquaFix first. Really appreciate the quick responses!" }
-  ],
-  2: [
-    { id: 1, author: "Council Rep", time: "4h ago", content: "Works are scheduled to complete by end of week. Apologies for the inconvenience - emergency gas main repair." },
-    { id: 2, author: "Emma L.", time: "4h ago", content: "This is the third time this year! What's going on with the infrastructure?" },
-    { id: 3, author: "Local Dave", time: "3h ago", content: "Thanks for the update. Would be helpful to have better signage about alternative routes." },
-    { id: 4, author: "Peter K.", time: "3h ago", content: "Use Thames Street as an alternative - much quieter." },
-    { id: 5, author: "Anna M.", time: "2h ago", content: "The temporary lights aren't working properly either, causing more delays." },
-    { id: 6, author: "Sam P.", time: "2h ago", content: "I've been cycling instead - much faster at the moment!" },
-    { id: 7, author: "Rachel T.", time: "1h ago", content: "Does anyone know if the 436 bus route is affected?" },
-    { id: 8, author: "Council Rep", time: "1h ago", content: "Bus routes are running with slight delays. Check TfL for real-time updates." },
-    { id: 9, author: "John D.", time: "45m ago", content: "Works look like they're making good progress today." },
-    { id: 10, author: "Lisa H.", time: "30m ago", content: "Hopefully they'll finish ahead of schedule!" },
-    { id: 11, author: "Mark S.", time: "20m ago", content: "Thanks for keeping us updated Dave!" },
-    { id: 12, author: "Local Dave", time: "10m ago", content: "No problem! Will post another update tomorrow." }
-  ],
-  3: [
-    { id: 1, author: "Rugby Club Admin", time: "12h ago", content: "Tickets go on sale this Friday at 9am! £8 adults, £5 kids. Available at the club or online at weybridgerugby.co.uk" }
-  ]
-};
-
 /* --- COMPONENTS --- */
 
 const NavItem = ({ icon: Icon, label, active, onClick }) => (
@@ -282,13 +242,13 @@ const ThreadRow = ({ thread, onClick }) => (
   <div onClick={onClick} className="bg-white p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors">
     <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
       <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
-      <span>• Posted by {thread.author} • {thread.time}</span>
+      <span>• Posted by {thread.author_username} • {formatTimeAgo(thread.created_at)}</span>
     </div>
     <h3 className="font-bold text-slate-800 mb-1">{thread.title}</h3>
-    <p className="text-slate-600 text-sm mb-2 line-clamp-1">{thread.preview}</p>
+    <p className="text-slate-600 text-sm mb-2 line-clamp-1">{thread.content}</p>
     <div className="flex items-center text-slate-400 text-xs">
       <MessageSquare size={12} className="mr-1" />
-      {thread.replies} replies
+      {thread.reply_count || 0} replies
     </div>
   </div>
 );
@@ -300,16 +260,59 @@ const ReplyCard = ({ reply }) => (
         <User size={16} className="text-teal-700" />
       </div>
       <div>
-        <span className="font-bold text-slate-800 text-sm">{reply.author}</span>
-        <span className="text-slate-400 text-xs ml-2">{reply.time}</span>
+        <span className="font-bold text-slate-800 text-sm">{reply.author_username}</span>
+        <span className="text-slate-400 text-xs ml-2">{formatTimeAgo(reply.created_at)}</span>
       </div>
     </div>
     <p className="text-slate-700 text-sm leading-relaxed">{reply.content}</p>
   </div>
 );
 
-const ThreadDetail = ({ thread, onBack }) => {
-  const replies = THREAD_REPLIES[thread.id] || [];
+const ThreadDetail = ({ thread, onBack, user, onReplySubmit }) => {
+  const [replies, setReplies] = useState([]);
+  const [replyContent, setReplyContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadReplies();
+  }, [thread.id]);
+
+  const loadReplies = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('forum_replies')
+      .select('*')
+      .eq('thread_id', thread.id)
+      .order('created_at', { ascending: true });
+
+    if (!error && data) {
+      setReplies(data);
+    }
+    setLoading(false);
+  };
+
+  const handleReplySubmit = async (e) => {
+    e.preventDefault();
+    if (!replyContent.trim() || !user) return;
+
+    setIsSubmitting(true);
+    const { error } = await supabase
+      .from('forum_replies')
+      .insert([{
+        thread_id: thread.id,
+        content: replyContent.trim(),
+        author_id: user.id,
+        author_username: user.email.split('@')[0]
+      }]);
+
+    if (!error) {
+      setReplyContent('');
+      await loadReplies();
+      if (onReplySubmit) onReplySubmit();
+    }
+    setIsSubmitting(false);
+  };
 
   return (
     <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
@@ -323,7 +326,7 @@ const ThreadDetail = ({ thread, onBack }) => {
         </button>
         <div className="flex items-center space-x-2 text-xs text-slate-500 mb-2">
           <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
-          <span>• Posted by {thread.author} • {thread.time}</span>
+          <span>• Posted by {thread.author_username} • {formatTimeAgo(thread.created_at)}</span>
         </div>
         <h1 className="text-xl font-bold text-slate-900">{thread.title}</h1>
       </div>
@@ -336,8 +339,8 @@ const ThreadDetail = ({ thread, onBack }) => {
               <User size={20} className="text-teal-800" />
             </div>
             <div>
-              <span className="font-bold text-slate-900">{thread.author}</span>
-              <span className="text-slate-500 text-xs ml-2">{thread.time}</span>
+              <span className="font-bold text-slate-900">{thread.author_username}</span>
+              <span className="text-slate-500 text-xs ml-2">{formatTimeAgo(thread.created_at)}</span>
             </div>
           </div>
           <p className="text-slate-800 leading-relaxed">{thread.content}</p>
@@ -349,15 +352,42 @@ const ThreadDetail = ({ thread, onBack }) => {
             <MessageSquare size={14} className="mr-1" />
             {replies.length} {replies.length === 1 ? 'Reply' : 'Replies'}
           </h3>
-          {replies.map(reply => (
-            <ReplyCard key={reply.id} reply={reply} />
-          ))}
+          {loading ? (
+            <div className="text-center py-8 text-slate-400">
+              <Loader className="animate-spin mx-auto mb-2" size={24} />
+              <p className="text-sm">Loading replies...</p>
+            </div>
+          ) : (
+            replies.map(reply => (
+              <ReplyCard key={reply.id} reply={reply} />
+            ))
+          )}
         </div>
 
-        {/* Reply Button Placeholder */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
-          <p className="text-slate-500 text-sm italic">Sign in to reply to this thread</p>
-        </div>
+        {/* Reply Form */}
+        {user ? (
+          <form onSubmit={handleReplySubmit} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <textarea
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              placeholder="Write your reply..."
+              className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+              rows={3}
+            />
+            <button
+              type="submit"
+              disabled={isSubmitting || !replyContent.trim()}
+              className="mt-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+            >
+              {isSubmitting ? <Loader size={16} className="animate-spin" /> : <Send size={16} />}
+              {isSubmitting ? 'Posting...' : 'Post Reply'}
+            </button>
+          </form>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+            <p className="text-slate-500 text-sm italic">Sign in to reply to this thread</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -382,6 +412,86 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
+const AuthModal = ({ isOpen, onClose, onSuccess }) => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert('Check your email for the confirmation link!');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        onSuccess();
+        onClose();
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={isSignUp ? 'Sign Up' : 'Sign In'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+            {error}
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading && <Loader size={18} className="animate-spin" />}
+          {loading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsSignUp(!isSignUp)}
+          className="w-full text-teal-600 text-sm font-medium hover:text-teal-800"
+        >
+          {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+        </button>
+      </form>
+    </Modal>
+  );
+};
+
 /* --- MAIN APP --- */
 
 export default function App() {
@@ -391,6 +501,17 @@ export default function App() {
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   const [submissionType, setSubmissionType] = useState('event');
   const [selectedThread, setSelectedThread] = useState(null);
+
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Forum state
+  const [threads, setThreads] = useState([]);
+  const [loadingThreads, setLoadingThreads] = useState(true);
+  const [newThreadTitle, setNewThreadTitle] = useState('');
+  const [newThreadContent, setNewThreadContent] = useState('');
+  const [newThreadBoard, setNewThreadBoard] = useState('Town Talk');
 
   // AI State
   const [plannerQuery, setPlannerQuery] = useState('');
@@ -405,6 +526,69 @@ export default function App() {
     ? PLACES
     : PLACES.filter(p => p.category === selectedCategory || p.tags.includes(selectedCategory));
 
+  // Check auth on load
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load threads
+  useEffect(() => {
+    loadThreads();
+  }, []);
+
+  const loadThreads = async () => {
+    setLoadingThreads(true);
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .select(`
+        *,
+        reply_count:forum_replies(count)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const threadsWithCount = data.map(thread => ({
+        ...thread,
+        reply_count: thread.reply_count?.[0]?.count || 0
+      }));
+      setThreads(threadsWithCount);
+    }
+    setLoadingThreads(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const handleCreateThread = async () => {
+    if (!user || !newThreadTitle.trim() || !newThreadContent.trim()) return;
+
+    const { error } = await supabase
+      .from('forum_threads')
+      .insert([{
+        board: newThreadBoard,
+        title: newThreadTitle.trim(),
+        content: newThreadContent.trim(),
+        author_id: user.id,
+        author_username: user.email.split('@')[0]
+      }]);
+
+    if (!error) {
+      setNewThreadTitle('');
+      setNewThreadContent('');
+      setIsSubmitOpen(false);
+      await loadThreads();
+    }
+  };
+
   /* --- GEMINI HANDLERS --- */
 
   const handleAIPlanner = async () => {
@@ -412,7 +596,6 @@ export default function App() {
     setIsPlanning(true);
     setPlannerResponse('');
 
-    // Construct context from our mock data
     const placesContext = PLACES.map(p => `${p.name} (${p.category}, ${p.price}): ${p.summary}`).join('\n');
     const eventsContext = EVENTS.map(e => `${e.title} (${e.type}, ${e.date}): ${e.summary}`).join('\n');
 
@@ -445,10 +628,9 @@ export default function App() {
     `;
 
     const response = await callGemini(prompt);
-    setSubmitDetails(response.replace(/"/g, '')); // Remove quotes if Gemini adds them
+    setSubmitDetails(response.replace(/"/g, ''));
     setIsPolishing(false);
   };
-
 
   const renderContent = () => {
     switch (activeTab) {
@@ -581,14 +763,38 @@ export default function App() {
 
       case 'forum':
         if (selectedThread) {
-          return <ThreadDetail thread={selectedThread} onBack={() => setSelectedThread(null)} />;
+          return <ThreadDetail thread={selectedThread} onBack={() => {
+            setSelectedThread(null);
+            loadThreads();
+          }} user={user} onReplySubmit={() => loadThreads()} />;
         }
 
         return (
           <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
              <div className="p-4 bg-white border-b border-slate-200">
-              <h1 className="text-2xl font-bold text-slate-900">Community</h1>
-              <p className="text-slate-500 text-sm">Ask locals, get answers. Moderated daily.</p>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-slate-900">Community</h1>
+                  <p className="text-slate-500 text-sm">Ask locals, get answers. Moderated daily.</p>
+                </div>
+                {user ? (
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 border border-slate-200 px-2 py-1 rounded"
+                  >
+                    <LogOut size={12} />
+                    Sign Out
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsAuthOpen(true)}
+                    className="flex items-center gap-1 text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100"
+                  >
+                    <User size={12} />
+                    Sign In
+                  </button>
+                )}
+              </div>
 
               <div className="flex mt-4 space-x-2 overflow-x-auto no-scrollbar">
                 <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-bold whitespace-nowrap">All Boards</span>
@@ -599,9 +805,21 @@ export default function App() {
             </div>
 
             <div className="bg-white">
-              {FORUM_THREADS.map(thread => (
-                <ThreadRow key={thread.id} thread={thread} onClick={() => setSelectedThread(thread)} />
-              ))}
+              {loadingThreads ? (
+                <div className="text-center py-12 text-slate-400">
+                  <Loader className="animate-spin mx-auto mb-2" size={32} />
+                  <p className="text-sm">Loading threads...</p>
+                </div>
+              ) : threads.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <MessageSquare className="mx-auto mb-2" size={32} />
+                  <p className="text-sm">No threads yet. Be the first to post!</p>
+                </div>
+              ) : (
+                threads.map(thread => (
+                  <ThreadRow key={thread.id} thread={thread} onClick={() => setSelectedThread(thread)} />
+                ))
+              )}
             </div>
           </div>
         );
@@ -629,6 +847,10 @@ export default function App() {
       {/* FAB (Floating Action Button) for Submit */}
       <button
         onClick={() => {
+          if (activeTab === 'forum' && !user) {
+            setIsAuthOpen(true);
+            return;
+          }
           setIsSubmitOpen(true);
           setSubmissionType(activeTab === 'events' ? 'event' : activeTab === 'forum' ? 'thread' : 'place');
         }}
@@ -641,7 +863,7 @@ export default function App() {
       {/* Bottom Navigation */}
       <nav className="bg-white border-t border-slate-200 h-16 flex items-center justify-around px-2 absolute bottom-0 w-full z-20 pb-safe">
         <NavItem
-          icon={Trees} // Using Trees as "Home" icon for local vibe
+          icon={Trees}
           label="Home"
           active={activeTab === 'home'}
           onClick={() => setActiveTab('home')}
@@ -666,50 +888,99 @@ export default function App() {
         />
       </nav>
 
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={() => loadThreads()}
+      />
+
       {/* Submission Modal */}
       <Modal
         isOpen={isSubmitOpen}
         onClose={() => setIsSubmitOpen(false)}
         title={submissionType === 'event' ? 'Submit an Event' : submissionType === 'thread' ? 'Start Discussion' : 'Suggest Place'}
       >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded border border-slate-100">
-            Thanks for contributing! All submissions are reviewed by a human to keep Weybridge spam-free.
-          </p>
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title / Name</label>
-            <input className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="e.g. Charity Bake Sale" />
-          </div>
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-xs font-bold text-slate-700 uppercase">Details</label>
-              <button
-                onClick={handleMagicPolish}
-                disabled={isPolishing || !submitDetails}
-                className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${isPolishing ? 'bg-indigo-100 text-indigo-400' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+        {submissionType === 'thread' ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Board</label>
+              <select
+                value={newThreadBoard}
+                onChange={(e) => setNewThreadBoard(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
               >
-                {isPolishing ? <Loader size={12} className="animate-spin"/> : <Sparkles size={12}/>}
-                {isPolishing ? 'Polishing...' : 'Magic Polish'}
-              </button>
+                <option>Recommendations</option>
+                <option>Town Talk</option>
+                <option>What's On</option>
+              </select>
             </div>
-            <textarea
-              value={submitDetails}
-              onChange={(e) => setSubmitDetails(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-3 text-sm h-24 focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none"
-              placeholder="Draft your details here, then hit Magic Polish!"
-            />
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title</label>
+              <input
+                value={newThreadTitle}
+                onChange={(e) => setNewThreadTitle(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                placeholder="What's your question?"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Details</label>
+              <textarea
+                value={newThreadContent}
+                onChange={(e) => setNewThreadContent(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-24 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                placeholder="Provide more context..."
+              />
+            </div>
+            <button
+              onClick={handleCreateThread}
+              disabled={!newThreadTitle.trim() || !newThreadContent.trim()}
+              className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Post Thread
+            </button>
           </div>
-          <button
-            onClick={() => {
-              alert("Thanks! Your submission has been sent for moderation.");
-              setIsSubmitOpen(false);
-              setSubmitDetails('');
-            }}
-            className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all"
-          >
-            Submit for Review
-          </button>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded border border-slate-100">
+              Thanks for contributing! All submissions are reviewed by a human to keep Weybridge spam-free.
+            </p>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title / Name</label>
+              <input className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="e.g. Charity Bake Sale" />
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase">Details</label>
+                <button
+                  onClick={handleMagicPolish}
+                  disabled={isPolishing || !submitDetails}
+                  className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${isPolishing ? 'bg-indigo-100 text-indigo-400' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+                >
+                  {isPolishing ? <Loader size={12} className="animate-spin"/> : <Sparkles size={12}/>}
+                  {isPolishing ? 'Polishing...' : 'Magic Polish'}
+                </button>
+              </div>
+              <textarea
+                value={submitDetails}
+                onChange={(e) => setSubmitDetails(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-24 focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none"
+                placeholder="Draft your details here, then hit Magic Polish!"
+              />
+            </div>
+            <button
+              onClick={() => {
+                alert("Thanks! Your submission has been sent for moderation.");
+                setIsSubmitOpen(false);
+                setSubmitDetails('');
+              }}
+              className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all"
+            >
+              Submit for Review
+            </button>
+          </div>
+        )}
       </Modal>
 
       {/* AI Planner Modal */}
