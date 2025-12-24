@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Filter,
   Sparkles,
-  Loader
+  Loader,
+  ArrowLeft,
+  User
 } from 'lucide-react';
 
 /* --- GEMINI API HELPER --- */
@@ -144,7 +146,8 @@ const FORUM_THREADS = [
     author: "Sarah J.",
     replies: 4,
     time: "2h ago",
-    preview: "Has anyone used PlumbRight based in Addlestone? Need someone ASAP..."
+    preview: "Has anyone used PlumbRight based in Addlestone? Need someone ASAP...",
+    content: "Has anyone used PlumbRight based in Addlestone? Need someone ASAP for a leaking radiator valve. Open to other recommendations if you've had good experiences!"
   },
   {
     id: 2,
@@ -153,7 +156,8 @@ const FORUM_THREADS = [
     author: "Local Dave",
     replies: 12,
     time: "5h ago",
-    preview: "Just walked past, looks like they are digging up the gas main again..."
+    preview: "Just walked past, looks like they are digging up the gas main again...",
+    content: "Just walked past, looks like they are digging up the gas main again on Queen's Road near the station. Anyone know how long this is expected to last? Traffic is backing up all the way to Monument Green."
   },
   {
     id: 3,
@@ -162,9 +166,36 @@ const FORUM_THREADS = [
     author: "MomOfTwo",
     replies: 1,
     time: "1d ago",
-    preview: "Are the tickets for the rugby club fireworks on sale yet?"
+    preview: "Are the tickets for the rugby club fireworks on sale yet?",
+    content: "Are the tickets for the rugby club fireworks on sale yet? I checked their website but couldn't find any info. Does anyone know when they go on sale and how much they cost? Taking the kids this year!"
   }
 ];
+
+const THREAD_REPLIES = {
+  1: [
+    { id: 1, author: "Mike R.", time: "1h ago", content: "Used them last month, they were great! Came within 2 hours and very reasonable price." },
+    { id: 2, author: "Jane W.", time: "1h ago", content: "I'd recommend AquaFix in Weybridge. Available 24/7 and always reliable." },
+    { id: 3, author: "Tom B.", time: "45m ago", content: "PlumbRight are good but can be pricey. Try Weybridge Plumbing Services, they're local and very fair." },
+    { id: 4, author: "Sarah J.", time: "30m ago", content: "Thanks everyone! I'll try AquaFix first. Really appreciate the quick responses!" }
+  ],
+  2: [
+    { id: 1, author: "Council Rep", time: "4h ago", content: "Works are scheduled to complete by end of week. Apologies for the inconvenience - emergency gas main repair." },
+    { id: 2, author: "Emma L.", time: "4h ago", content: "This is the third time this year! What's going on with the infrastructure?" },
+    { id: 3, author: "Local Dave", time: "3h ago", content: "Thanks for the update. Would be helpful to have better signage about alternative routes." },
+    { id: 4, author: "Peter K.", time: "3h ago", content: "Use Thames Street as an alternative - much quieter." },
+    { id: 5, author: "Anna M.", time: "2h ago", content: "The temporary lights aren't working properly either, causing more delays." },
+    { id: 6, author: "Sam P.", time: "2h ago", content: "I've been cycling instead - much faster at the moment!" },
+    { id: 7, author: "Rachel T.", time: "1h ago", content: "Does anyone know if the 436 bus route is affected?" },
+    { id: 8, author: "Council Rep", time: "1h ago", content: "Bus routes are running with slight delays. Check TfL for real-time updates." },
+    { id: 9, author: "John D.", time: "45m ago", content: "Works look like they're making good progress today." },
+    { id: 10, author: "Lisa H.", time: "30m ago", content: "Hopefully they'll finish ahead of schedule!" },
+    { id: 11, author: "Mark S.", time: "20m ago", content: "Thanks for keeping us updated Dave!" },
+    { id: 12, author: "Local Dave", time: "10m ago", content: "No problem! Will post another update tomorrow." }
+  ],
+  3: [
+    { id: 1, author: "Rugby Club Admin", time: "12h ago", content: "Tickets go on sale this Friday at 9am! £8 adults, £5 kids. Available at the club or online at weybridgerugby.co.uk" }
+  ]
+};
 
 /* --- COMPONENTS --- */
 
@@ -247,8 +278,8 @@ const EventRow = ({ event }) => (
   </div>
 );
 
-const ThreadRow = ({ thread }) => (
-  <div className="bg-white p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors">
+const ThreadRow = ({ thread, onClick }) => (
+  <div onClick={onClick} className="bg-white p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors">
     <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
       <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
       <span>• Posted by {thread.author} • {thread.time}</span>
@@ -261,6 +292,76 @@ const ThreadRow = ({ thread }) => (
     </div>
   </div>
 );
+
+const ReplyCard = ({ reply }) => (
+  <div className="bg-white p-4 rounded-lg border border-slate-200">
+    <div className="flex items-center space-x-2 mb-2">
+      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+        <User size={16} className="text-teal-700" />
+      </div>
+      <div>
+        <span className="font-bold text-slate-800 text-sm">{reply.author}</span>
+        <span className="text-slate-400 text-xs ml-2">{reply.time}</span>
+      </div>
+    </div>
+    <p className="text-slate-700 text-sm leading-relaxed">{reply.content}</p>
+  </div>
+);
+
+const ThreadDetail = ({ thread, onBack }) => {
+  const replies = THREAD_REPLIES[thread.id] || [];
+
+  return (
+    <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
+      <div className="sticky top-0 bg-white border-b border-slate-200 p-4 z-10">
+        <button
+          onClick={onBack}
+          className="flex items-center text-teal-700 font-bold text-sm mb-3 hover:text-teal-800 transition-colors"
+        >
+          <ArrowLeft size={18} className="mr-1" />
+          Back to Forum
+        </button>
+        <div className="flex items-center space-x-2 text-xs text-slate-500 mb-2">
+          <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
+          <span>• Posted by {thread.author} • {thread.time}</span>
+        </div>
+        <h1 className="text-xl font-bold text-slate-900">{thread.title}</h1>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Original Post */}
+        <div className="bg-teal-50 p-4 rounded-lg border border-teal-100">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center">
+              <User size={20} className="text-teal-800" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900">{thread.author}</span>
+              <span className="text-slate-500 text-xs ml-2">{thread.time}</span>
+            </div>
+          </div>
+          <p className="text-slate-800 leading-relaxed">{thread.content}</p>
+        </div>
+
+        {/* Replies */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide flex items-center">
+            <MessageSquare size={14} className="mr-1" />
+            {replies.length} {replies.length === 1 ? 'Reply' : 'Replies'}
+          </h3>
+          {replies.map(reply => (
+            <ReplyCard key={reply.id} reply={reply} />
+          ))}
+        </div>
+
+        {/* Reply Button Placeholder */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center">
+          <p className="text-slate-500 text-sm italic">Sign in to reply to this thread</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
@@ -289,6 +390,7 @@ export default function App() {
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   const [submissionType, setSubmissionType] = useState('event');
+  const [selectedThread, setSelectedThread] = useState(null);
 
   // AI State
   const [plannerQuery, setPlannerQuery] = useState('');
@@ -478,6 +580,10 @@ export default function App() {
         );
 
       case 'forum':
+        if (selectedThread) {
+          return <ThreadDetail thread={selectedThread} onBack={() => setSelectedThread(null)} />;
+        }
+
         return (
           <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
              <div className="p-4 bg-white border-b border-slate-200">
@@ -494,7 +600,7 @@ export default function App() {
 
             <div className="bg-white">
               {FORUM_THREADS.map(thread => (
-                <ThreadRow key={thread.id} thread={thread} />
+                <ThreadRow key={thread.id} thread={thread} onClick={() => setSelectedThread(thread)} />
               ))}
             </div>
           </div>
@@ -612,7 +718,7 @@ export default function App() {
         onClose={() => setIsPlannerOpen(false)}
         title={
           <span className="flex items-center text-indigo-900">
-            <Sparkles className="text-indigo-600 mr-2" size={20} fill="currentColor" className="text-indigo-100 fill-indigo-600" />
+            <Sparkles className="text-indigo-600 mr-2" size={20} />
             Concierge
           </span>
         }
