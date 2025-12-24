@@ -162,7 +162,7 @@ const EVENTS = [
 const NavItem = ({ icon: Icon, label, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center w-full py-2 transition-colors ${active ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'}`}
+    className={`flex flex-col items-center justify-center w-full py-3 transition-colors ${active ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'}`}
   >
     <Icon size={24} strokeWidth={active ? 2.5 : 2} />
     <span className="text-xs mt-1 font-medium">{label}</span>
@@ -854,39 +854,43 @@ export default function App() {
           setIsSubmitOpen(true);
           setSubmissionType(activeTab === 'events' ? 'event' : activeTab === 'forum' ? 'thread' : 'place');
         }}
-        className="absolute bottom-20 right-4 bg-teal-600 hover:bg-teal-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-teal-900/20 transition-all hover:scale-105 active:scale-95 z-20"
+        className="absolute bottom-24 right-4 bg-teal-600 hover:bg-teal-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-teal-900/20 transition-all hover:scale-105 active:scale-95 z-20"
         aria-label="Add new"
       >
         <Plus size={28} />
       </button>
 
       {/* Bottom Navigation */}
-      <nav className="bg-white border-t border-slate-200 h-16 flex items-center justify-around px-2 absolute bottom-0 w-full z-20 pb-safe">
-        <NavItem
-          icon={Trees}
-          label="Home"
-          active={activeTab === 'home'}
-          onClick={() => setActiveTab('home')}
-        />
-        <NavItem
-          icon={MapPin}
-          label="Guide"
-          active={activeTab === 'guide'}
-          onClick={() => setActiveTab('guide')}
-        />
-        <NavItem
-          icon={Calendar}
-          label="Events"
-          active={activeTab === 'events'}
-          onClick={() => setActiveTab('events')}
-        />
-        <NavItem
-          icon={MessageSquare}
-          label="Forum"
-          active={activeTab === 'forum'}
-          onClick={() => setActiveTab('forum')}
-        />
-      </nav>
+      <div className="absolute bottom-0 w-full z-20">
+        <nav className="bg-white border-t border-slate-200 flex items-center justify-around px-2 pt-2 pb-1">
+          <NavItem
+            icon={Trees}
+            label="Home"
+            active={activeTab === 'home'}
+            onClick={() => setActiveTab('home')}
+          />
+          <NavItem
+            icon={MapPin}
+            label="Guide"
+            active={activeTab === 'guide'}
+            onClick={() => setActiveTab('guide')}
+          />
+          <NavItem
+            icon={Calendar}
+            label="Events"
+            active={activeTab === 'events'}
+            onClick={() => setActiveTab('events')}
+          />
+          <NavItem
+            icon={MessageSquare}
+            label="Forum"
+            active={activeTab === 'forum'}
+            onClick={() => setActiveTab('forum')}
+          />
+        </nav>
+        {/* Safe area spacing for iOS */}
+        <div className="bg-white pb-safe"></div>
+      </div>
 
       {/* Auth Modal */}
       <AuthModal
