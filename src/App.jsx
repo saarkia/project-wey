@@ -862,7 +862,7 @@ export default function App() {
 
       {/* Bottom Navigation */}
       <div className="absolute bottom-0 w-full z-20">
-        <nav className="bg-white border-t border-slate-200 flex items-center justify-around px-2 pt-2 pb-1">
+        <nav className="bg-white border-t border-slate-200 flex items-center justify-around px-2 pt-2 pb-3">
           <NavItem
             icon={Trees}
             label="Home"
@@ -888,8 +888,8 @@ export default function App() {
             onClick={() => setActiveTab('forum')}
           />
         </nav>
-        {/* Safe area spacing for iOS */}
-        <div className="bg-white pb-safe"></div>
+        {/* Extra padding for Safari URL bar + safe area for home indicator */}
+        <div className="bg-white pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}></div>
       </div>
 
       {/* Auth Modal */}
