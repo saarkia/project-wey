@@ -1249,7 +1249,37 @@ export default function App() {
               </div>
 
               <div className="space-y-2">
-                {EVENTS.slice(0, 2).map(evt => <EventRow key={evt.id} event={evt} />)}
+                {(() => {
+                  // Get upcoming approved events
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const upcomingEvents = events
+                    .filter(e => e.status === 'approved' && new Date(e.event_date) >= today)
+                    .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
+                    .slice(0, 2);
+
+                  if (upcomingEvents.length === 0) {
+                    return (
+                      <div className="text-center py-6 text-slate-400">
+                        <p className="text-sm">No upcoming events</p>
+                      </div>
+                    );
+                  }
+
+                  return upcomingEvents.map(evt => (
+                    <EventRow
+                      key={evt.id}
+                      event={{
+                        ...evt,
+                        date: formatEventDate(evt.event_date),
+                        time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''
+                      }}
+                      onClick={() => {
+                        setSelectedEvent(evt);
+                      }}
+                    />
+                  ));
+                })()}
               </div>
             </div>
 
