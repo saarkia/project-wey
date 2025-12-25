@@ -104,10 +104,37 @@ const getEventGrouping = (dateString) => {
   if (diffDays < 0) return 'past';
   if (diffDays === 0) return 'today';
   if (diffDays === 1) return 'tomorrow';
-  if (diffDays <= 7) return 'this-week';
-  if (diffDays <= 14) return 'next-week';
 
-  // Group by month for events beyond 2 weeks
+  // Calculate the start of this week (Monday)
+  const todayDayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const daysFromMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1; // Sunday is 6 days from Monday
+  const thisWeekMonday = new Date(today);
+  thisWeekMonday.setDate(today.getDate() - daysFromMonday);
+  thisWeekMonday.setHours(0, 0, 0, 0);
+
+  // Calculate the end of this week (Sunday)
+  const thisWeekSunday = new Date(thisWeekMonday);
+  thisWeekSunday.setDate(thisWeekMonday.getDate() + 6);
+  thisWeekSunday.setHours(23, 59, 59, 999);
+
+  // Calculate next week's Monday and Sunday
+  const nextWeekMonday = new Date(thisWeekMonday);
+  nextWeekMonday.setDate(thisWeekMonday.getDate() + 7);
+  const nextWeekSunday = new Date(nextWeekMonday);
+  nextWeekSunday.setDate(nextWeekMonday.getDate() + 6);
+  nextWeekSunday.setHours(23, 59, 59, 999);
+
+  // Check if event is in this week (Monday to Sunday)
+  if (eventDate >= thisWeekMonday && eventDate <= thisWeekSunday) {
+    return 'this-week';
+  }
+
+  // Check if event is in next week (Monday to Sunday)
+  if (eventDate >= nextWeekMonday && eventDate <= nextWeekSunday) {
+    return 'next-week';
+  }
+
+  // Group by month for events beyond next week
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   return `${months[eventDate.getMonth()]} ${eventDate.getFullYear()}`;
 };
