@@ -71,6 +71,44 @@ const formatTimeAgo = (timestamp) => {
   return then.toLocaleDateString();
 };
 
+/* --- DATE UTILITY FUNCTIONS FOR EVENTS --- */
+const formatEventDate = (dateString) => {
+  const eventDate = new Date(dateString);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Reset time parts for date comparison
+  today.setHours(0, 0, 0, 0);
+  tomorrow.setHours(0, 0, 0, 0);
+  eventDate.setHours(0, 0, 0, 0);
+
+  if (eventDate.getTime() === today.getTime()) return 'Today';
+  if (eventDate.getTime() === tomorrow.getTime()) return 'Tomorrow';
+
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  return `${days[eventDate.getDay()]}, ${months[eventDate.getMonth()]} ${eventDate.getDate()}`;
+};
+
+const getEventGrouping = (dateString) => {
+  const eventDate = new Date(dateString);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  eventDate.setHours(0, 0, 0, 0);
+
+  const diffTime = eventDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return 'past';
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'tomorrow';
+  if (diffDays <= 7) return 'this-week';
+  if (diffDays <= 14) return 'next-week';
+  return 'later';
+};
+
 /* --- MOCK DATA --- */
 
 const PLACES = [
@@ -705,6 +743,23 @@ export default function App() {
   const [newThreadContent, setNewThreadContent] = useState('');
   const [newThreadBoard, setNewThreadBoard] = useState('Town Talk');
 
+  // Events state
+  const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [showPastEvents, setShowPastEvents] = useState(false);
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventStartTime, setEventStartTime] = useState('');
+  const [eventEndTime, setEventEndTime] = useState('');
+  const [eventLocation, setEventLocation] = useState('');
+  const [eventType, setEventType] = useState('Community');
+  const [eventSummary, setEventSummary] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
+  const [eventOrganizerName, setEventOrganizerName] = useState('');
+  const [eventWebsiteUrl, setEventWebsiteUrl] = useState('');
+  const [eventImageFile, setEventImageFile] = useState(null);
+  const [eventImagePreview, setEventImagePreview] = useState('');
+
   // AI State
   const [plannerQuery, setPlannerQuery] = useState('');
   const [plannerResponse, setPlannerResponse] = useState('');
@@ -807,6 +862,125 @@ export default function App() {
     }
   };
 
+  // Load events
+  const loadEvents = async () => {
+    setLoadingEvents(true);
+    const { data, error} = await supabase
+      .from('events')
+      .select('*')
+      .order('event_date', { ascending: true });
+
+    if (!error && data) {
+      setEvents(data);
+    }
+    setLoadingEvents(false);
+  };
+
+  // Submit event
+  const handleSubmitEvent = async () => {
+    if (!user || !eventTitle.trim() || !eventDate || !eventLocation.trim() || !eventSummary.trim()) {
+      alert('Please fill in all required fields (title, date, location, summary)');
+      return;
+    }
+
+    setIsPolishing(true);
+
+    try {
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (eventImageFile) {
+        const fileExt = eventImageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('event-images')
+          .upload(fileName, eventImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('event-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Insert event
+      const { error } = await supabase
+        .from('events')
+        .insert([{
+          title: eventTitle.trim(),
+          event_date: eventDate,
+          start_time: eventStartTime || null,
+          end_time: eventEndTime || null,
+          location: eventLocation.trim(),
+          type: eventType,
+          summary: eventSummary.trim(),
+          description: eventDescription.trim() || null,
+          organizer_name: eventOrganizerName.trim() || null,
+          website_url: eventWebsiteUrl.trim() || null,
+          image_url: imageUrl,
+          submitter_id: user.id,
+          status: 'pending'
+        }]);
+
+      if (error) throw error;
+
+      // Reset form
+      setEventTitle('');
+      setEventDate('');
+      setEventStartTime('');
+      setEventEndTime('');
+      setEventLocation('');
+      setEventType('Community');
+      setEventSummary('');
+      setEventDescription('');
+      setEventOrganizerName('');
+      setEventWebsiteUrl('');
+      setEventImageFile(null);
+      setEventImagePreview('');
+      setIsSubmitOpen(false);
+
+      alert('Thanks! Your event will be reviewed within 24 hours.');
+      await loadEvents();
+    } catch (err) {
+      alert('Error submitting event: ' + err.message);
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  // Admin approve event
+  const handleApproveEvent = async (eventId) => {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from('events')
+      .update({ status: 'approved' })
+      .eq('id', eventId);
+
+    if (!error) {
+      await loadEvents();
+    }
+  };
+
+  // Admin delete event
+  const handleDeleteEvent = async (eventId) => {
+    if (!isAdmin) return;
+
+    if (!confirm('Are you sure you want to delete this event?')) return;
+
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', eventId);
+
+    if (!error) {
+      await loadEvents();
+    }
+  };
+
   // Check auth on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -831,6 +1005,11 @@ export default function App() {
   // Load threads
   useEffect(() => {
     loadThreads();
+  }, []);
+
+  // Load events
+  useEffect(() => {
+    loadEvents();
   }, []);
 
   const loadThreads = async () => {
@@ -1023,32 +1202,112 @@ export default function App() {
         );
 
       case 'events':
+        // Group events by date
+        const approvedEvents = events.filter(e => e.status === 'approved');
+        const pendingEvents = events.filter(e => e.status === 'pending');
+
+        const groupedEvents = {
+          today: [],
+          tomorrow: [],
+          'this-week': [],
+          'next-week': [],
+          later: [],
+          past: []
+        };
+
+        approvedEvents.forEach(event => {
+          const group = getEventGrouping(event.event_date);
+          groupedEvents[group].push(event);
+        });
+
+        const groupTitles = {
+          today: 'Today',
+          tomorrow: 'Tomorrow',
+          'this-week': 'This Week',
+          'next-week': 'Next Week',
+          later: 'Coming Up',
+          past: 'Past Events'
+        };
+
         return (
           <div className="pb-32 p-4 animate-in slide-in-from-right-4 duration-300">
              <div className="flex justify-between items-end mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">What's On</h1>
-                <p className="text-slate-500 text-sm">Curated events for the week ahead.</p>
+                <p className="text-slate-500 text-sm">Curated events in Weybridge.</p>
               </div>
-              <button className="flex items-center text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full">
-                <Filter size={12} className="mr-1"/> Filter
+              <button
+                onClick={() => setShowPastEvents(!showPastEvents)}
+                className="flex items-center text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100"
+              >
+                {showPastEvents ? 'Hide Past' : 'Show Past'}
               </button>
             </div>
 
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center">
-                  This Weekend <div className="h-px bg-slate-200 flex-1 ml-3"></div>
+            {/* Admin: Pending Events */}
+            {isAdmin && pendingEvents.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-3 ml-1 flex items-center">
+                  <Shield size={14} className="mr-1" />
+                  Pending Approval ({pendingEvents.length})
+                  <div className="h-px bg-amber-200 flex-1 ml-3"></div>
                 </h3>
-                {EVENTS.slice(0, 2).map(evt => <EventRow key={evt.id} event={evt} />)}
+                <div className="space-y-2">
+                  {pendingEvents.map(evt => (
+                    <div key={evt.id} className="relative">
+                      <EventRow event={evt} />
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <button
+                          onClick={() => handleApproveEvent(evt.id)}
+                          className="bg-green-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-600"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEvent(evt.id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center">
-                  Next Week <div className="h-px bg-slate-200 flex-1 ml-3"></div>
-                </h3>
-                {EVENTS.slice(2, 3).map(evt => <EventRow key={evt.id} event={evt} />)}
+            )}
+
+            {loadingEvents ? (
+              <div className="text-center py-12 text-slate-400">
+                <Loader className="animate-spin mx-auto mb-2" size={32} />
+                <p className="text-sm">Loading events...</p>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-6">
+                {['today', 'tomorrow', 'this-week', 'next-week', 'later', 'past'].map(groupKey => {
+                  const groupEvents = groupedEvents[groupKey];
+                  if (groupEvents.length === 0) return null;
+                  if (groupKey === 'past' && !showPastEvents) return null;
+
+                  return (
+                    <div key={groupKey}>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center">
+                        {groupTitles[groupKey]}
+                        <div className="h-px bg-slate-200 flex-1 ml-3"></div>
+                      </h3>
+                      {groupEvents.map(evt => (
+                        <EventRow key={evt.id} event={{...evt, date: formatEventDate(evt.event_date), time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''}} />
+                      ))}
+                    </div>
+                  );
+                })}
+                {approvedEvents.length === 0 && (
+                  <div className="text-center py-12 text-slate-400">
+                    <Calendar className="mx-auto mb-2" size={32} />
+                    <p className="text-sm">No events scheduled yet.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
 
@@ -1267,6 +1526,173 @@ export default function App() {
               Post Thread
             </button>
           </div>
+        ) : submissionType === 'event' ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded border border-slate-100">
+              Thanks for contributing! All event submissions are reviewed by admins before going live.
+            </p>
+
+            {/* Event Image */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Event Image (Optional)</label>
+              <div className="flex items-center gap-3">
+                {eventImagePreview && (
+                  <img src={eventImagePreview} alt="Preview" className="w-20 h-20 object-cover rounded border" />
+                )}
+                <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                  <Camera size={16} />
+                  {eventImagePreview ? 'Change Image' : 'Add Image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('Image must be less than 5MB');
+                          return;
+                        }
+                        setEventImageFile(file);
+                        setEventImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Event Title */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Event Title *</label>
+              <input
+                value={eventTitle}
+                onChange={(e) => setEventTitle(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                placeholder="e.g. Weybridge Farmers Market"
+                required
+              />
+            </div>
+
+            {/* Date and Times */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-3">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Start Time</label>
+                <input
+                  type="time"
+                  value={eventStartTime}
+                  onChange={(e) => setEventStartTime(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">End Time (Optional)</label>
+                <input
+                  type="time"
+                  value={eventEndTime}
+                  onChange={(e) => setEventEndTime(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Location and Type */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Location *</label>
+                <input
+                  value={eventLocation}
+                  onChange={(e) => setEventLocation(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  placeholder="Monument Green"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Type</label>
+                <select
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                >
+                  <option>Market</option>
+                  <option>Music</option>
+                  <option>Kids</option>
+                  <option>Sports</option>
+                  <option>Community</option>
+                  <option>Arts</option>
+                  <option>Food & Drink</option>
+                  <option>Charity</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Short Summary * (for calendar view)</label>
+              <textarea
+                value={eventSummary}
+                onChange={(e) => setEventSummary(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-16 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                placeholder="Brief description (e.g. Fresh produce, artisan bread, and local crafts)"
+                required
+              />
+            </div>
+
+            {/* Full Description */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Full Description (Optional)</label>
+              <textarea
+                value={eventDescription}
+                onChange={(e) => setEventDescription(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-20 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                placeholder="Additional details, parking info, ticket prices, etc."
+              />
+            </div>
+
+            {/* Organizer and Website */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Organizer (Optional)</label>
+                <input
+                  value={eventOrganizerName}
+                  onChange={(e) => setEventOrganizerName(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  placeholder="Organization name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Website (Optional)</label>
+                <input
+                  type="url"
+                  value={eventWebsiteUrl}
+                  onChange={(e) => setEventWebsiteUrl(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSubmitEvent}
+              disabled={isPolishing || !eventTitle.trim() || !eventDate || !eventLocation.trim() || !eventSummary.trim()}
+              className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isPolishing && <Loader size={18} className="animate-spin" />}
+              {isPolishing ? 'Submitting...' : 'Submit Event for Review'}
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded border border-slate-100">
@@ -1274,7 +1700,7 @@ export default function App() {
             </p>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title / Name</label>
-              <input className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="e.g. Charity Bake Sale" />
+              <input className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="e.g. Local Business" />
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
