@@ -1551,7 +1551,10 @@ export default function App() {
       {/* Top Header (only for non-home pages to keep home clean) */}
       {activeTab !== 'home' && activeTab !== 'guide' && activeTab !== 'forum' && (
         <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-10 flex justify-between items-center">
-           <span className="font-bold text-teal-800 tracking-tight">bythewey<span className="text-teal-500">.com</span></span>
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="ByTheWey" className="w-8 h-8" />
+            <span className="font-bold text-teal-800 tracking-tight">bythewey<span className="text-teal-500">.com</span></span>
+          </div>
         </div>
       )}
 
