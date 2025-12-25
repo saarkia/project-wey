@@ -106,7 +106,10 @@ const getEventGrouping = (dateString) => {
   if (diffDays === 1) return 'tomorrow';
   if (diffDays <= 7) return 'this-week';
   if (diffDays <= 14) return 'next-week';
-  return 'later';
+
+  // Group by month for events beyond 2 weeks
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${months[eventDate.getMonth()]} ${eventDate.getFullYear()}`;
 };
 
 /* --- MOCK DATA --- */
@@ -260,8 +263,8 @@ const PlaceCard = ({ place }) => (
   </div>
 );
 
-const EventRow = ({ event }) => (
-  <div className="flex bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-3">
+const EventRow = ({ event, onClick }) => (
+  <div onClick={onClick} className="flex bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-3 cursor-pointer hover:shadow-md transition-shadow">
     <div className="flex flex-col items-center justify-center bg-teal-50 text-teal-800 rounded-lg w-16 h-16 mr-4 shrink-0 border border-teal-100">
       <span className="text-xs font-bold uppercase">{event.date.split(',')[0]}</span>
       <span className="text-xl font-black">{event.date.split(' ')[1]}</span>
@@ -720,6 +723,77 @@ const ProfileEditModal = ({ isOpen, onClose, userProfile, onProfileUpdated }) =>
   );
 };
 
+const EventDetailModal = ({ isOpen, onClose, event }) => {
+  if (!event) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={event.title}>
+      <div className="space-y-4">
+        {/* Event Image */}
+        {event.image_url && (
+          <img src={event.image_url} alt={event.title} className="w-full h-48 object-cover rounded-lg" />
+        )}
+
+        {/* Date, Time, Location */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-slate-50 p-3 rounded-lg">
+            <div className="text-xs font-bold text-slate-500 uppercase mb-1">Date</div>
+            <div className="text-sm text-slate-800">{formatEventDate(event.event_date)}</div>
+          </div>
+          {event.start_time && (
+            <div className="bg-slate-50 p-3 rounded-lg">
+              <div className="text-xs font-bold text-slate-500 uppercase mb-1">Time</div>
+              <div className="text-sm text-slate-800">
+                {event.start_time.slice(0, 5)}{event.end_time ? ` - ${event.end_time.slice(0, 5)}` : ''}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-slate-50 p-3 rounded-lg">
+          <div className="text-xs font-bold text-slate-500 uppercase mb-1">Location</div>
+          <div className="text-sm text-slate-800">{event.location}</div>
+        </div>
+
+        {/* Type Badge */}
+        <div>
+          <span className="inline-block bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-xs font-bold border border-teal-100">
+            {event.type}
+          </span>
+        </div>
+
+        {/* Description */}
+        <div>
+          <div className="text-xs font-bold text-slate-700 uppercase mb-2">About This Event</div>
+          <p className="text-sm text-slate-700 leading-relaxed">
+            {event.description || event.summary}
+          </p>
+        </div>
+
+        {/* Organizer */}
+        {event.organizer_name && (
+          <div className="bg-slate-50 p-3 rounded-lg">
+            <div className="text-xs font-bold text-slate-500 uppercase mb-1">Organized By</div>
+            <div className="text-sm text-slate-800">{event.organizer_name}</div>
+          </div>
+        )}
+
+        {/* Website */}
+        {event.website_url && (
+          <a
+            href={event.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full bg-teal-600 text-white text-center font-bold py-3 rounded-xl hover:bg-teal-700 transition-colors"
+          >
+            Visit Website
+          </a>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
 /* --- MAIN APP --- */
 
 export default function App() {
@@ -747,6 +821,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [showPastEvents, setShowPastEvents] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventStartTime, setEventStartTime] = useState('');
@@ -1206,27 +1281,44 @@ export default function App() {
         const approvedEvents = events.filter(e => e.status === 'approved');
         const pendingEvents = events.filter(e => e.status === 'pending');
 
-        const groupedEvents = {
-          today: [],
-          tomorrow: [],
-          'this-week': [],
-          'next-week': [],
-          later: [],
-          past: []
-        };
+        const groupedEvents = {};
 
         approvedEvents.forEach(event => {
           const group = getEventGrouping(event.event_date);
+          if (!groupedEvents[group]) {
+            groupedEvents[group] = [];
+          }
           groupedEvents[group].push(event);
         });
 
+        // Define ordering for groups
+        const groupOrder = ['today', 'tomorrow', 'this-week', 'next-week'];
+        const sortedGroupKeys = Object.keys(groupedEvents).sort((a, b) => {
+          const aIndex = groupOrder.indexOf(a);
+          const bIndex = groupOrder.indexOf(b);
+
+          // If both are in the predefined order, sort by index
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+          // If only a is in predefined order, it comes first
+          if (aIndex !== -1) return -1;
+          // If only b is in predefined order, it comes first
+          if (bIndex !== -1) return 1;
+          // If both are months or 'past', sort chronologically
+          if (a === 'past') return 1;
+          if (b === 'past') return -1;
+          // Both are month names, sort by parsing the date
+          const aDate = new Date(a);
+          const bDate = new Date(b);
+          return aDate - bDate;
+        });
+
+        // Map group keys to display titles
         const groupTitles = {
-          today: 'Today',
-          tomorrow: 'Tomorrow',
+          'today': 'Today',
+          'tomorrow': 'Tomorrow',
           'this-week': 'This Week',
           'next-week': 'Next Week',
-          later: 'Coming Up',
-          past: 'Past Events'
+          'past': 'Past Events'
         };
 
         return (
@@ -1252,24 +1344,33 @@ export default function App() {
                   Pending Approval ({pendingEvents.length})
                   <div className="h-px bg-amber-200 flex-1 ml-3"></div>
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {pendingEvents.map(evt => (
-                    <div key={evt.id} className="relative">
-                      <EventRow event={{
-                        ...evt,
-                        date: formatEventDate(evt.event_date),
-                        time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''
-                      }} />
-                      <div className="absolute top-2 right-2 flex gap-2">
+                    <div key={evt.id} className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      <EventRow
+                        event={{
+                          ...evt,
+                          date: formatEventDate(evt.event_date),
+                          time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''
+                        }}
+                        onClick={() => setSelectedEvent(evt)}
+                      />
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-amber-200">
                         <button
-                          onClick={() => handleApproveEvent(evt.id)}
-                          className="bg-green-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproveEvent(evt.id);
+                          }}
+                          className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-green-600 transition-colors"
                         >
                           Approve
                         </button>
                         <button
-                          onClick={() => handleDeleteEvent(evt.id)}
-                          className="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteEvent(evt.id);
+                          }}
+                          className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-red-600 transition-colors"
                         >
                           Delete
                         </button>
@@ -1287,19 +1388,30 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-6">
-                {['today', 'tomorrow', 'this-week', 'next-week', 'later', 'past'].map(groupKey => {
+                {sortedGroupKeys.map(groupKey => {
                   const groupEvents = groupedEvents[groupKey];
-                  if (groupEvents.length === 0) return null;
+                  if (!groupEvents || groupEvents.length === 0) return null;
                   if (groupKey === 'past' && !showPastEvents) return null;
+
+                  // Use predefined title or the month name itself
+                  const displayTitle = groupTitles[groupKey] || groupKey;
 
                   return (
                     <div key={groupKey}>
                       <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 ml-1 flex items-center">
-                        {groupTitles[groupKey]}
+                        {displayTitle}
                         <div className="h-px bg-slate-200 flex-1 ml-3"></div>
                       </h3>
                       {groupEvents.map(evt => (
-                        <EventRow key={evt.id} event={{...evt, date: formatEventDate(evt.event_date), time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''}} />
+                        <EventRow
+                          key={evt.id}
+                          event={{
+                            ...evt,
+                            date: formatEventDate(evt.event_date),
+                            time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''
+                          }}
+                          onClick={() => setSelectedEvent(evt)}
+                        />
                       ))}
                     </div>
                   );
@@ -1482,6 +1594,13 @@ export default function App() {
         onClose={() => setIsProfileEditOpen(false)}
         userProfile={userProfile}
         onProfileUpdated={() => loadUserProfile(user.id)}
+      />
+
+      {/* Event Detail Modal */}
+      <EventDetailModal
+        isOpen={selectedEvent !== null}
+        onClose={() => setSelectedEvent(null)}
+        event={selectedEvent}
       />
 
       {/* Submission Modal */}
