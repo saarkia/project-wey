@@ -56,6 +56,13 @@ const callGemini = async (prompt, systemInstruction = "") => {
 };
 
 /* --- UTILITY FUNCTIONS --- */
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
+
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const then = new Date(timestamp);
@@ -1215,7 +1222,7 @@ export default function App() {
                <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-600 rounded-full -translate-x-10 translate-y-10 opacity-30"></div>
               <div className="relative z-10">
                 <img src="/logo.png" alt="ByTheWey" className="h-12 mb-3 brightness-0 invert" />
-                <h1 className="text-2xl font-bold mb-1">Good morning, Weybridge.</h1>
+                <h1 className="text-2xl font-bold mb-1">{getGreeting()}, Weybridge.</h1>
                 <p className="text-teal-100 opacity-90 text-sm">Here is what's happening in town today.</p>
               </div>
             </div>
