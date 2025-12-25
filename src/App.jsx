@@ -1255,7 +1255,11 @@ export default function App() {
                 <div className="space-y-2">
                   {pendingEvents.map(evt => (
                     <div key={evt.id} className="relative">
-                      <EventRow event={evt} />
+                      <EventRow event={{
+                        ...evt,
+                        date: formatEventDate(evt.event_date),
+                        time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''
+                      }} />
                       <div className="absolute top-2 right-2 flex gap-2">
                         <button
                           onClick={() => handleApproveEvent(evt.id)}
