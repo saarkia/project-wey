@@ -27,6 +27,7 @@ import {
   Settings
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
+import Styleguide from './pages/Styleguide';
 
 /* --- GEMINI API HELPER --- */
 const callGemini = async (prompt, systemInstruction = "") => {
@@ -831,6 +832,11 @@ const EventDetailModal = ({ isOpen, onClose, event }) => {
 /* --- MAIN APP --- */
 
 export default function App() {
+  // Hidden styleguide route
+  if (window.location.pathname === '/styleguide') {
+    return <Styleguide />;
+  }
+
   const [activeTab, setActiveTab] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);

@@ -1,0 +1,40 @@
+/**
+ * ByTheWey Design Tokens
+ * Option C Color Palette
+ */
+
+:root {
+  /* Brand Colors */
+  --brand-primary: #0F5E59;
+  --brand-accent: #9FD3D0;
+
+  /* Surface Colors */
+  --surface-base: #F7F4EF;
+  --surface-card: #FFFEFC;
+  --surface-muted: #EFEAE2;
+
+  /* Text Colors */
+  --text-primary: #0B1220;
+  --text-secondary: #2B3646;
+  --text-muted: #5B6B7D;
+  --text-inverse: #F8FAFC;
+
+  /* Border Colors */
+  --border-subtle: #E6E1D8;
+  --border-strong: #D7D1C6;
+
+  /* Focus Ring */
+  --focus-ring: #16A39A;
+
+  /* Category Tints (background only) */
+  --category-coffee: #EFE5D8;
+  --category-pubs: #E9E0F2;
+  --category-kids: #DDEBFA;
+  --category-culture: #DDEFE6;
+  --category-shopping: #F5DCE0;
+}
+
+/* Apply surface-base to body by default */
+body {
+  background-color: var(--surface-base);
+}
