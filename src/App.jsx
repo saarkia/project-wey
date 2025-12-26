@@ -833,9 +833,10 @@ const EventDetailModal = ({ isOpen, onClose, event }) => {
 
 export default function App() {
   // Hidden styleguide route
-  if (window.location.pathname === '/styleguide') {
-    return <Styleguide />;
-  }
+  const isStyleguide =
+    typeof window !== 'undefined' &&
+    window.location.pathname.endsWith('/styleguide');
+  if (isStyleguide) return <Styleguide />;
 
   const [activeTab, setActiveTab] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('All');
