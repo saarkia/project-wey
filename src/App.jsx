@@ -56,6 +56,13 @@ const callGemini = async (prompt, systemInstruction = "") => {
 };
 
 /* --- UTILITY FUNCTIONS --- */
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
+
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const then = new Date(timestamp);
@@ -1217,7 +1224,7 @@ export default function App() {
                 <div className="flex items-center gap-3 mb-3">
                   <img src="/logo.png" alt="ByTheWey" className="w-12 h-12 bg-white/10 rounded-xl p-1.5 backdrop-blur" />
                   <div>
-                    <h1 className="text-2xl font-bold">Good morning, Weybridge.</h1>
+                    <h1 className="text-2xl font-bold">{getGreeting()}, Weybridge.</h1>
                     <p className="text-teal-100 opacity-90 text-sm">Here is what's happening in town today.</p>
                   </div>
                 </div>
@@ -1254,7 +1261,37 @@ export default function App() {
               </div>
 
               <div className="space-y-2">
-                {EVENTS.slice(0, 2).map(evt => <EventRow key={evt.id} event={evt} />)}
+                {(() => {
+                  // Get upcoming approved events
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const upcomingEvents = events
+                    .filter(e => e.status === 'approved' && new Date(e.event_date) >= today)
+                    .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
+                    .slice(0, 2);
+
+                  if (upcomingEvents.length === 0) {
+                    return (
+                      <div className="text-center py-6 text-slate-400">
+                        <p className="text-sm">No upcoming events</p>
+                      </div>
+                    );
+                  }
+
+                  return upcomingEvents.map(evt => (
+                    <EventRow
+                      key={evt.id}
+                      event={{
+                        ...evt,
+                        date: formatEventDate(evt.event_date),
+                        time: evt.start_time ? (evt.end_time ? `${evt.start_time.slice(0,5)} - ${evt.end_time.slice(0,5)}` : evt.start_time.slice(0,5)) : ''
+                      }}
+                      onClick={() => {
+                        setSelectedEvent(evt);
+                      }}
+                    />
+                  ));
+                })()}
               </div>
             </div>
 
