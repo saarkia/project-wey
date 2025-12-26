@@ -1231,19 +1231,33 @@ export default function App() {
         return (
           <div className="space-y-6 pb-32 animate-in fade-in duration-300">
             {/* Hero - Daily Edition */}
-            <div className="bg-brand-primary text-text-inverse p-6 rounded-2xl shadow-lg mx-4 mt-4 relative overflow-hidden hero-texture">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/70 rounded-full translate-x-10 -translate-y-10 opacity-50"></div>
-               <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-primary/50 rounded-full -translate-x-10 translate-y-10 opacity-30"></div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-3">
-                  <img src="/logo.png" alt="ByTheWey" className="w-14 h-14 bg-white/10 rounded-xl p-1.5 backdrop-blur shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-text-inverse/70 text-xs font-medium uppercase tracking-wide mb-1">{getTodayDate()}</p>
-                    <h1 className="text-2xl font-bold leading-tight">{getGreeting()}, Weybridge.</h1>
-                    <p className="text-text-inverse/80 text-sm mt-1">Today's picks and what's on soon.</p>
-                  </div>
+            <div
+              className="mx-4 mt-4 p-8 rounded-2xl relative overflow-hidden shadow-md"
+              style={{
+                background: 'linear-gradient(to bottom, #0F5E59 0%, #11655F 100%)'
+              }}
+            >
+              <div className="flex items-start gap-4">
+                <img
+                  src="/logo.png"
+                  alt="ByTheWey"
+                  className="w-16 h-16 rounded-xl shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-text-inverse/60 text-xs font-medium uppercase tracking-wider mb-1.5">
+                    {getTodayDate()}
+                  </p>
+                  <h1 className="text-text-inverse text-2xl md:text-3xl font-bold leading-tight mb-2">
+                    {getGreeting()}, Weybridge.
+                  </h1>
+                  <p className="text-text-inverse/85 text-sm max-w-md">
+                    Today's picks and what's on soon.
+                  </p>
                 </div>
               </div>
+
+              {/* Subtle bottom border */}
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-white/10"></div>
             </div>
 
             {/* What's on soon */}

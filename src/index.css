@@ -102,22 +102,3 @@ body {
 .slide-in-from-bottom-2 {
   animation: slide-in-from-bottom-2 0.2s ease-out;
 }
-
-/* Subtle river texture for hero */
-.hero-texture {
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 50px,
-      rgba(255, 255, 255, 0.02) 50px,
-      rgba(255, 255, 255, 0.02) 52px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 50px,
-      rgba(255, 255, 255, 0.015) 50px,
-      rgba(255, 255, 255, 0.015) 52px
-    );
-}
