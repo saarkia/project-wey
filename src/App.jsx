@@ -1221,9 +1221,13 @@ export default function App() {
                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-700 rounded-full translate-x-10 -translate-y-10 opacity-50"></div>
                <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-600 rounded-full -translate-x-10 translate-y-10 opacity-30"></div>
               <div className="relative z-10">
-                <img src="/logo.png" alt="ByTheWey" className="h-12 mb-3 brightness-0 invert" />
-                <h1 className="text-2xl font-bold mb-1">{getGreeting()}, Weybridge.</h1>
-                <p className="text-teal-100 opacity-90 text-sm">Here is what's happening in town today.</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/logo.png" alt="ByTheWey" className="w-12 h-12 bg-white/10 rounded-xl p-1.5 backdrop-blur" />
+                  <div>
+                    <h1 className="text-2xl font-bold">{getGreeting()}, Weybridge.</h1>
+                    <p className="text-teal-100 opacity-90 text-sm">Here is what's happening in town today.</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1589,7 +1593,10 @@ export default function App() {
       {/* Top Header (only for non-home pages to keep home clean) */}
       {activeTab !== 'home' && activeTab !== 'guide' && activeTab !== 'forum' && (
         <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-10 flex justify-between items-center">
-           <img src="/logo.png" alt="ByTheWey" className="h-8" />
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="ByTheWey" className="w-8 h-8" />
+            <span className="font-bold text-teal-800 tracking-tight">bythewey<span className="text-teal-500">.com</span></span>
+          </div>
         </div>
       )}
 
