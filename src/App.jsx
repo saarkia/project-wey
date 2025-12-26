@@ -270,40 +270,65 @@ const CategoryPill = ({ icon: Icon, label, active, onClick }) => (
   </button>
 );
 
-const PlaceCard = ({ place }) => (
-  <div className="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-    <div className={`h-24 ${place.bg} relative flex items-center justify-center`}>
-       <span className="text-text-muted/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
-      <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
-        {place.category}
-      </div>
-    </div>
-    <div className="p-4">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="font-bold text-lg text-text-primary">{place.name}</h3>
-          <div className="flex items-center text-text-secondary text-sm">
-            <MapPin size={12} className="mr-1" />
-            {place.area} • {place.price}
+const PlaceCard = ({ place }) => {
+  // Generate category background color
+  const categoryColors = {
+    'Coffee': 'bg-orange-100',
+    'Pub': 'bg-emerald-100',
+    'Restaurant': 'bg-purple-100',
+    'Kids': 'bg-sky-100',
+    'Culture': 'bg-amber-100',
+    'Shopping': 'bg-pink-100',
+    'Services': 'bg-blue-100',
+    'Other': 'bg-slate-100'
+  };
+
+  const bgColor = place.bg || categoryColors[place.category] || 'bg-slate-100';
+
+  return (
+    <div className="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      {place.image_url ? (
+        <div className="h-24 relative overflow-hidden">
+          <img src={place.image_url} alt={place.name} className="w-full h-full object-cover" />
+          <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
+            {place.category}
           </div>
         </div>
-      </div>
+      ) : (
+        <div className={`h-24 ${bgColor} relative flex items-center justify-center`}>
+          <span className="text-text-muted/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
+          <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
+            {place.category}
+          </div>
+        </div>
+      )}
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="font-bold text-lg text-text-primary">{place.name}</h3>
+            <div className="flex items-center text-text-secondary text-sm">
+              <MapPin size={12} className="mr-1" />
+              {place.area} • {place.price}
+            </div>
+          </div>
+        </div>
 
-      {/* Editorial Summary - The "Value Add" */}
-      <div className="bg-brand-accent/20 p-3 rounded-lg mb-3 border border-brand-accent/30">
-        <p className="text-sm text-text-primary italic">"{place.summary}"</p>
-      </div>
+        {/* Editorial Summary - The "Value Add" */}
+        <div className="bg-brand-accent/20 p-3 rounded-lg mb-3 border border-brand-accent/30">
+          <p className="text-sm text-text-primary italic">"{place.summary}"</p>
+        </div>
 
-      <div className="flex flex-wrap gap-1">
-        {place.tags.map(tag => (
-          <span key={tag} className="text-xs px-2 py-1 bg-surface-muted text-text-secondary rounded">
-            {tag}
-          </span>
-        ))}
+        <div className="flex flex-wrap gap-1">
+          {(place.tags || []).map(tag => (
+            <span key={tag} className="text-xs px-2 py-1 bg-surface-muted text-text-secondary rounded">
+              {tag}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EventRow = ({ event, onClick }) => (
   <div onClick={onClick} className="flex bg-surface-card p-4 rounded-xl border border-border-subtle shadow-sm mb-3 cursor-pointer hover:shadow-md transition-shadow">
@@ -883,6 +908,23 @@ export default function App() {
   const [eventImageFile, setEventImageFile] = useState(null);
   const [eventImagePreview, setEventImagePreview] = useState('');
 
+  // Places state
+  const [places, setPlaces] = useState([]);
+  const [loadingPlaces, setLoadingPlaces] = useState(true);
+  const [placeName, setPlaceName] = useState('');
+  const [placeCategory, setPlaceCategory] = useState('Coffee');
+  const [placeArea, setPlaceArea] = useState('');
+  const [placePrice, setPlacePrice] = useState('£');
+  const [placeSummary, setPlaceSummary] = useState('');
+  const [placeDescription, setPlaceDescription] = useState('');
+  const [placeHours, setPlaceHours] = useState('');
+  const [placePhone, setPlacePhone] = useState('');
+  const [placeWebsite, setPlaceWebsite] = useState('');
+  const [placeAddress, setPlaceAddress] = useState('');
+  const [placeTags, setPlaceTags] = useState('');
+  const [placeImageFile, setPlaceImageFile] = useState(null);
+  const [placeImagePreview, setPlaceImagePreview] = useState('');
+
   // AI State
   const [plannerQuery, setPlannerQuery] = useState('');
   const [plannerResponse, setPlannerResponse] = useState('');
@@ -892,9 +934,10 @@ export default function App() {
   const [isPolishing, setIsPolishing] = useState(false);
 
   // Filter Logic
+  const approvedPlaces = places.filter(p => p.status === 'approved');
   const filteredPlaces = selectedCategory === 'All'
-    ? PLACES
-    : PLACES.filter(p => p.category === selectedCategory || p.tags.includes(selectedCategory));
+    ? approvedPlaces
+    : approvedPlaces.filter(p => p.category === selectedCategory || (p.tags && p.tags.includes(selectedCategory)));
 
   // Load user profile (includes role)
   const loadUserProfile = async (userId) => {
@@ -1104,6 +1147,147 @@ export default function App() {
     }
   };
 
+  // Load places
+  const loadPlaces = async () => {
+    setLoadingPlaces(true);
+    const { data, error } = await supabase
+      .from('places')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setPlaces(data);
+    }
+    setLoadingPlaces(false);
+  };
+
+  // Submit place
+  const handleSubmitPlace = async () => {
+    if (!user || !placeName.trim() || !placeCategory || !placeArea.trim() || !placeSummary.trim()) {
+      alert('Please fill in all required fields (name, category, area, summary)');
+      return;
+    }
+
+    setIsPolishing(true);
+
+    try {
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (placeImageFile) {
+        const fileExt = placeImageFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('place-images')
+          .upload(fileName, placeImageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('place-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Parse tags from comma-separated string
+      const tagsArray = placeTags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+      // Insert place
+      const { error } = await supabase
+        .from('places')
+        .insert([{
+          name: placeName.trim(),
+          category: placeCategory,
+          area: placeArea.trim(),
+          price: placePrice,
+          summary: placeSummary.trim(),
+          description: placeDescription.trim() || null,
+          hours: placeHours.trim() || null,
+          phone: placePhone.trim() || null,
+          website: placeWebsite.trim() || null,
+          address: placeAddress.trim() || null,
+          tags: tagsArray,
+          image_url: imageUrl,
+          submitter_id: user.id,
+          status: 'pending'
+        }]);
+
+      if (error) throw error;
+
+      // Reset form
+      setPlaceName('');
+      setPlaceCategory('Coffee');
+      setPlaceArea('');
+      setPlacePrice('£');
+      setPlaceSummary('');
+      setPlaceDescription('');
+      setPlaceHours('');
+      setPlacePhone('');
+      setPlaceWebsite('');
+      setPlaceAddress('');
+      setPlaceTags('');
+      setPlaceImageFile(null);
+      setPlaceImagePreview('');
+      setIsSubmitOpen(false);
+
+      alert('Thanks! Your place will be reviewed within 24 hours.');
+      await loadPlaces();
+    } catch (err) {
+      alert('Error submitting place: ' + err.message);
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  // Admin approve place
+  const handleApprovePlace = async (placeId) => {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from('places')
+      .update({ status: 'approved' })
+      .eq('id', placeId);
+
+    if (!error) {
+      await loadPlaces();
+    }
+  };
+
+  // Admin delete place
+  const handleDeletePlace = async (placeId) => {
+    if (!isAdmin) return;
+
+    if (!confirm('Are you sure you want to delete this place?')) return;
+
+    const { error } = await supabase
+      .from('places')
+      .delete()
+      .eq('id', placeId);
+
+    if (!error) {
+      await loadPlaces();
+    }
+  };
+
+  // Admin toggle featured
+  const handleToggleFeatured = async (placeId, currentFeatured) => {
+    if (!isAdmin) return;
+
+    const { error } = await supabase
+      .from('places')
+      .update({ featured: !currentFeatured })
+      .eq('id', placeId);
+
+    if (!error) {
+      await loadPlaces();
+    }
+  };
+
   // Check auth on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1133,6 +1317,11 @@ export default function App() {
   // Load events
   useEffect(() => {
     loadEvents();
+  }, []);
+
+  // Load places
+  useEffect(() => {
+    loadPlaces();
   }, []);
 
   const loadThreads = async () => {
@@ -1312,51 +1501,97 @@ export default function App() {
                 <button onClick={() => setActiveTab('guide')} className="text-xs font-bold text-brand-primary hover:opacity-80 transition-opacity">Open guide →</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                {PLACES.length > 0 ? (
-                  PLACES.slice(0, 2).map(place => (
-                    <div key={place.id} className="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                      <div className={`h-24 ${place.bg} relative flex items-center justify-center`}>
-                        <span className="text-text-muted/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
-                        <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
-                          {place.category}
-                        </div>
-                        <div className="absolute top-3 right-3 bg-brand-primary text-text-inverse px-2 py-0.5 rounded text-xs font-bold shadow-sm">
-                          Edited pick
-                        </div>
+                {(() => {
+                  // Show featured places, or fallback to first 2 approved if no featured
+                  const featuredPlaces = approvedPlaces.filter(p => p.featured);
+                  const displayPlaces = featuredPlaces.length > 0
+                    ? featuredPlaces.slice(0, 2)
+                    : approvedPlaces.slice(0, 2);
+
+                  if (displayPlaces.length === 0) {
+                    return (
+                      <div className="col-span-full bg-surface-card border border-border-subtle rounded-xl p-6 text-center">
+                        <ThumbsUp className="mx-auto mb-3 text-text-muted opacity-40" size={32} />
+                        <p className="text-text-secondary text-sm mb-3">No editor's picks yet</p>
+                        <button
+                          onClick={() => {
+                            setActiveTab('guide');
+                            setIsSubmitOpen(true);
+                            setSubmissionType('place');
+                          }}
+                          className="text-xs font-medium text-brand-primary hover:opacity-80 transition-opacity"
+                        >
+                          Add a place
+                        </button>
                       </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-bold text-lg text-text-primary">{place.name}</h3>
-                            <div className="flex items-center text-text-secondary text-sm">
-                              <MapPin size={12} className="mr-1" />
-                              {place.area} • {place.price}
+                    );
+                  }
+
+                  return displayPlaces.map(place => {
+                    const categoryColors = {
+                      'Coffee': 'bg-orange-100',
+                      'Pub': 'bg-emerald-100',
+                      'Restaurant': 'bg-purple-100',
+                      'Kids': 'bg-sky-100',
+                      'Culture': 'bg-amber-100',
+                      'Shopping': 'bg-pink-100',
+                      'Services': 'bg-blue-100',
+                      'Other': 'bg-slate-100'
+                    };
+                    const bgColor = categoryColors[place.category] || 'bg-slate-100';
+
+                    return (
+                      <div key={place.id} className="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        {place.image_url ? (
+                          <div className="h-24 relative overflow-hidden">
+                            <img src={place.image_url} alt={place.name} className="w-full h-full object-cover" />
+                            <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
+                              {place.category}
+                            </div>
+                            <div className="absolute top-3 right-3 bg-brand-primary text-text-inverse px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                              Editor's pick
                             </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className={`h-24 ${bgColor} relative flex items-center justify-center`}>
+                            <span className="text-text-muted/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
+                            <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
+                              {place.category}
+                            </div>
+                            <div className="absolute top-3 right-3 bg-brand-primary text-text-inverse px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                              Editor's pick
+                            </div>
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-bold text-lg text-text-primary">{place.name}</h3>
+                              <div className="flex items-center text-text-secondary text-sm">
+                                <MapPin size={12} className="mr-1" />
+                                {place.area} • {place.price}
+                              </div>
+                            </div>
+                          </div>
 
-                        {/* Editorial Summary */}
-                        <div className="bg-brand-accent/20 p-3 rounded-lg mb-3 border border-brand-accent/30">
-                          <p className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-1">Why we like it</p>
-                          <p className="text-sm text-text-primary italic">"{place.summary}"</p>
-                        </div>
+                          {/* Editorial Summary */}
+                          <div className="bg-brand-accent/20 p-3 rounded-lg mb-3 border border-brand-accent/30">
+                            <p className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-1">Why we like it</p>
+                            <p className="text-sm text-text-primary italic">"{place.summary}"</p>
+                          </div>
 
-                        <div className="flex flex-wrap gap-1">
-                          {place.tags.map(tag => (
-                            <span key={tag} className="text-xs px-2 py-1 bg-surface-muted text-text-secondary border border-border-subtle rounded">
-                              {tag}
-                            </span>
-                          ))}
+                          <div className="flex flex-wrap gap-1">
+                            {(place.tags || []).map(tag => (
+                              <span key={tag} className="text-xs px-2 py-1 bg-surface-muted text-text-secondary border border-border-subtle rounded">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full bg-surface-card border border-border-subtle rounded-xl p-6 text-center">
-                    <ThumbsUp className="mx-auto mb-3 text-text-muted opacity-40" size={32} />
-                    <p className="text-text-secondary text-sm">No editor's picks yet</p>
-                  </div>
-                )}
+                    );
+                  });
+                })()}
               </div>
             </div>
 
@@ -1384,6 +1619,8 @@ export default function App() {
         );
 
       case 'guide':
+        const pendingPlaces = places.filter(p => p.status === 'pending');
+
         return (
           <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
             <div className="sticky top-0 bg-surface-base/95 backdrop-blur z-10 p-4 border-b border-border-subtle shadow-sm">
@@ -1404,10 +1641,71 @@ export default function App() {
               </div>
             </div>
 
+            {/* Admin: Pending Places */}
+            {isAdmin && pendingPlaces.length > 0 && (
+              <div className="px-4 pt-4 mb-4">
+                <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-3 ml-1 flex items-center">
+                  <Shield size={14} className="mr-1" />
+                  Pending Approval ({pendingPlaces.length})
+                  <div className="h-px bg-amber-200 flex-1 ml-3"></div>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {pendingPlaces.map(place => (
+                    <div key={place.id} className="relative">
+                      <PlaceCard place={place} />
+                      <div className="absolute top-2 right-2 flex gap-2 z-10">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApprovePlace(place.id);
+                          }}
+                          className="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition-colors shadow-md"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePlace(place.id);
+                          }}
+                          className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-600 transition-colors shadow-md"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPlaces.length > 0 ? (
+              {loadingPlaces ? (
+                <div className="col-span-full text-center py-12 text-slate-400">
+                  <Loader className="animate-spin mx-auto mb-2" size={32} />
+                  <p className="text-sm">Loading places...</p>
+                </div>
+              ) : filteredPlaces.length > 0 ? (
                 filteredPlaces.map(place => (
-                  <PlaceCard key={place.id} place={place} />
+                  <div key={place.id} className="relative">
+                    <PlaceCard place={place} />
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFeatured(place.id, place.featured);
+                        }}
+                        className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-bold transition-colors shadow-md z-10 ${
+                          place.featured
+                            ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                        }`}
+                        title={place.featured ? 'Remove from featured' : 'Mark as featured'}
+                      >
+                        {place.featured ? '★ Featured' : '☆ Feature'}
+                      </button>
+                    )}
+                  </div>
                 ))
               ) : (
                 <div className="col-span-full py-10 text-center text-slate-400">
@@ -1964,40 +2262,181 @@ export default function App() {
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded border border-slate-100">
-              Thanks for contributing! All submissions are reviewed by a human to keep Weybridge spam-free.
+              Thanks for contributing! All place submissions are reviewed by admins before going live.
             </p>
+
+            {/* Place Image */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title / Name</label>
-              <input className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="e.g. Local Business" />
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-bold text-slate-700 uppercase">Details</label>
-                <button
-                  onClick={handleMagicPolish}
-                  disabled={isPolishing || !submitDetails}
-                  className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-full transition-all ${isPolishing ? 'bg-indigo-100 text-indigo-400' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
-                >
-                  {isPolishing ? <Loader size={12} className="animate-spin"/> : <Sparkles size={12}/>}
-                  {isPolishing ? 'Polishing...' : 'Magic Polish'}
-                </button>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Place Image (Optional)</label>
+              <div className="flex items-center gap-3">
+                {placeImagePreview && (
+                  <img src={placeImagePreview} alt="Preview" className="w-20 h-20 object-cover rounded border" />
+                )}
+                <label className="cursor-pointer bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                  <Camera size={16} />
+                  {placeImagePreview ? 'Change Image' : 'Add Image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('Image must be less than 5MB');
+                          return;
+                        }
+                        setPlaceImageFile(file);
+                        setPlaceImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
               </div>
-              <textarea
-                value={submitDetails}
-                onChange={(e) => setSubmitDetails(e.target.value)}
-                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-24 focus:outline-none focus:ring-2 focus:ring-focus-ring transition-all resize-none"
-                placeholder="Draft your details here, then hit Magic Polish!"
+            </div>
+
+            {/* Place Name */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Place Name *</label>
+              <input
+                value={placeName}
+                onChange={(e) => setPlaceName(e.target.value)}
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                placeholder="e.g. The Minnow"
+                required
               />
             </div>
+
+            {/* Category, Area, Price */}
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Category *</label>
+                <select
+                  value={placeCategory}
+                  onChange={(e) => setPlaceCategory(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                >
+                  <option>Coffee</option>
+                  <option>Pub</option>
+                  <option>Restaurant</option>
+                  <option>Kids</option>
+                  <option>Culture</option>
+                  <option>Shopping</option>
+                  <option>Services</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Area *</label>
+                <input
+                  value={placeArea}
+                  onChange={(e) => setPlaceArea(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                  placeholder="Town Centre"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Price</label>
+                <select
+                  value={placePrice}
+                  onChange={(e) => setPlacePrice(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                >
+                  <option>£</option>
+                  <option>££</option>
+                  <option>£££</option>
+                  <option>££££</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Short Summary * (Why you recommend it)</label>
+              <textarea
+                value={placeSummary}
+                onChange={(e) => setPlaceSummary(e.target.value)}
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-16 focus:outline-none focus:ring-2 focus:ring-focus-ring resize-none"
+                placeholder="e.g. Best independent coffee in town. Staff are incredibly friendly..."
+                required
+              />
+            </div>
+
+            {/* Full Description */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Full Description (Optional)</label>
+              <textarea
+                value={placeDescription}
+                onChange={(e) => setPlaceDescription(e.target.value)}
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-20 focus:outline-none focus:ring-2 focus:ring-focus-ring resize-none"
+                placeholder="Additional details, tips, what to order, etc."
+              />
+            </div>
+
+            {/* Hours and Phone */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Hours (Optional)</label>
+                <input
+                  value={placeHours}
+                  onChange={(e) => setPlaceHours(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                  placeholder="e.g. 7am - 5pm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Phone (Optional)</label>
+                <input
+                  value={placePhone}
+                  onChange={(e) => setPlacePhone(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                  placeholder="01932 123456"
+                />
+              </div>
+            </div>
+
+            {/* Website and Address */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Website (Optional)</label>
+                <input
+                  type="url"
+                  value={placeWebsite}
+                  onChange={(e) => setPlaceWebsite(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Address (Optional)</label>
+                <input
+                  value={placeAddress}
+                  onChange={(e) => setPlaceAddress(e.target.value)}
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                  placeholder="123 High Street"
+                />
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tags (Optional, comma-separated)</label>
+              <input
+                value={placeTags}
+                onChange={(e) => setPlaceTags(e.target.value)}
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
+                placeholder="e.g. Laptop Friendly, Pastries, Good Coffee"
+              />
+            </div>
+
             <button
-              onClick={() => {
-                alert("Thanks! Your submission has been sent for moderation.");
-                setIsSubmitOpen(false);
-                setSubmitDetails('');
-              }}
-              className="w-full bg-brand-primary text-text-inverse font-bold py-3.5 rounded-xl hover:opacity-90 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all"
+              onClick={handleSubmitPlace}
+              disabled={isPolishing || !placeName.trim() || !placeCategory || !placeArea.trim() || !placeSummary.trim()}
+              className="w-full bg-brand-primary text-text-inverse font-bold py-3.5 rounded-xl hover:opacity-90 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Submit for Review
+              {isPolishing && <Loader size={18} className="animate-spin" />}
+              {isPolishing ? 'Submitting...' : 'Submit Place for Review'}
             </button>
           </div>
         )}
