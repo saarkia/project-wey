@@ -242,7 +242,7 @@ const EVENTS = [
 const NavItem = ({ icon: Icon, label, active, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center w-full py-3 transition-colors ${active ? 'text-teal-700' : 'text-slate-400 hover:text-slate-600'}`}
+    className={`flex flex-col items-center justify-center w-full py-3 transition-colors ${active ? 'text-brand-primary' : 'text-text-muted hover:text-text-secondary'}`}
   >
     <Icon size={24} strokeWidth={active ? 2.5 : 2} />
     <span className="text-xs mt-1 font-medium">{label}</span>
@@ -254,8 +254,8 @@ const CategoryPill = ({ icon: Icon, label, active, onClick }) => (
     onClick={onClick}
     className={`flex items-center space-x-2 px-4 py-2 rounded-full border text-sm whitespace-nowrap transition-all ${
       active
-      ? 'bg-teal-700 border-teal-700 text-white shadow-md'
-      : 'bg-white border-slate-200 text-slate-600 hover:border-teal-300'
+      ? 'bg-brand-primary border-brand-primary text-text-inverse shadow-md'
+      : 'bg-surface-card border-border-subtle text-text-secondary hover:border-brand-accent'
     }`}
   >
     {Icon && <Icon size={14} />}
@@ -264,18 +264,18 @@ const CategoryPill = ({ icon: Icon, label, active, onClick }) => (
 );
 
 const PlaceCard = ({ place }) => (
-  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+  <div className="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
     <div className={`h-24 ${place.bg} relative flex items-center justify-center`}>
-       <span className="text-slate-500/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
-      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-slate-700 shadow-sm">
+       <span className="text-text-muted/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
+      <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
         {place.category}
       </div>
     </div>
     <div className="p-4">
       <div className="flex justify-between items-start mb-2">
         <div>
-          <h3 className="font-bold text-lg text-slate-900">{place.name}</h3>
-          <div className="flex items-center text-slate-500 text-sm">
+          <h3 className="font-bold text-lg text-text-primary">{place.name}</h3>
+          <div className="flex items-center text-text-secondary text-sm">
             <MapPin size={12} className="mr-1" />
             {place.area} • {place.price}
           </div>
@@ -283,13 +283,13 @@ const PlaceCard = ({ place }) => (
       </div>
 
       {/* Editorial Summary - The "Value Add" */}
-      <div className="bg-teal-50 p-3 rounded-lg mb-3 border border-teal-100/50">
-        <p className="text-sm text-teal-900 italic">"{place.summary}"</p>
+      <div className="bg-brand-accent/20 p-3 rounded-lg mb-3 border border-brand-accent/30">
+        <p className="text-sm text-text-primary italic">"{place.summary}"</p>
       </div>
 
       <div className="flex flex-wrap gap-1">
         {place.tags.map(tag => (
-          <span key={tag} className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded">
+          <span key={tag} className="text-xs px-2 py-1 bg-surface-muted text-text-secondary rounded">
             {tag}
           </span>
         ))}
@@ -299,38 +299,38 @@ const PlaceCard = ({ place }) => (
 );
 
 const EventRow = ({ event, onClick }) => (
-  <div onClick={onClick} className="flex bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-3 cursor-pointer hover:shadow-md transition-shadow">
-    <div className="flex flex-col items-center justify-center bg-teal-50 text-teal-800 rounded-lg w-16 h-16 mr-4 shrink-0 border border-teal-100">
+  <div onClick={onClick} className="flex bg-surface-card p-4 rounded-xl border border-border-subtle shadow-sm mb-3 cursor-pointer hover:shadow-md transition-shadow">
+    <div className="flex flex-col items-center justify-center bg-brand-accent/30 text-brand-primary rounded-lg w-16 h-16 mr-4 shrink-0 border border-brand-accent/50">
       <span className="text-xs font-bold uppercase">{event.date.split(',')[0]}</span>
       <span className="text-xl font-black">{event.date.split(' ')[1]}</span>
     </div>
     <div className="flex-1">
       <div className="flex justify-between items-start">
-        <h3 className="font-bold text-slate-900">{event.title}</h3>
-        <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{event.type}</span>
+        <h3 className="font-bold text-text-primary">{event.title}</h3>
+        <span className="text-xs font-medium bg-surface-muted text-text-secondary px-2 py-1 rounded-full">{event.type}</span>
       </div>
-      <div className="flex items-center text-slate-500 text-sm mt-1 mb-2">
+      <div className="flex items-center text-text-secondary text-sm mt-1 mb-2">
         <Clock size={12} className="mr-1" />
         {event.time} • {event.location}
       </div>
-      <p className="text-sm text-slate-600 line-clamp-2">{event.summary}</p>
+      <p className="text-sm text-text-secondary line-clamp-2">{event.summary}</p>
     </div>
   </div>
 );
 
 const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
-  <div onClick={onClick} className="bg-white p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 cursor-pointer transition-colors">
+  <div onClick={onClick} className="bg-surface-card p-4 border-b border-border-subtle last:border-0 hover:bg-surface-muted cursor-pointer transition-colors">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-brand-accent/30 flex items-center justify-center overflow-hidden flex-shrink-0">
           {thread.author_avatar ? (
             <img src={thread.author_avatar} alt={thread.author_username} className="w-full h-full object-cover" />
           ) : (
-            <User size={16} className="text-teal-700" />
+            <User size={16} className="text-brand-primary" />
           )}
         </div>
-        <div className="flex items-center space-x-2 text-xs text-slate-500">
-          <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
+        <div className="flex items-center space-x-2 text-xs text-text-muted">
+          <span className="font-bold text-brand-primary bg-brand-accent/20 px-1.5 py-0.5 rounded border border-brand-accent/30">{thread.board}</span>
           <span>• Posted by {thread.author_username}</span>
           <span>• {formatTimeAgo(thread.created_at)}</span>
         </div>
@@ -348,9 +348,9 @@ const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
         </button>
       )}
     </div>
-    <h3 className="font-bold text-slate-800 mb-1">{thread.title}</h3>
-    <p className="text-slate-600 text-sm mb-2 line-clamp-1">{thread.content}</p>
-    <div className="flex items-center text-slate-400 text-xs ml-10">
+    <h3 className="font-bold text-text-primary mb-1">{thread.title}</h3>
+    <p className="text-text-secondary text-sm mb-2 line-clamp-1">{thread.content}</p>
+    <div className="flex items-center text-text-muted text-xs ml-10">
       <MessageSquare size={12} className="mr-1" />
       {thread.reply_count || 0} replies
     </div>
@@ -358,19 +358,19 @@ const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
 );
 
 const ReplyCard = ({ reply, isAdmin, onDelete }) => (
-  <div className="bg-white p-4 rounded-lg border border-slate-200">
+  <div className="bg-surface-card p-4 rounded-lg border border-border-subtle">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-brand-accent/30 flex items-center justify-center overflow-hidden flex-shrink-0">
           {reply.author_avatar ? (
             <img src={reply.author_avatar} alt={reply.author_username} className="w-full h-full object-cover" />
           ) : (
-            <User size={16} className="text-teal-700" />
+            <User size={16} className="text-brand-primary" />
           )}
         </div>
         <div>
-          <span className="font-bold text-slate-800 text-sm">{reply.author_username}</span>
-          <span className="text-slate-400 text-xs ml-2">{formatTimeAgo(reply.created_at)}</span>
+          <span className="font-bold text-text-primary text-sm">{reply.author_username}</span>
+          <span className="text-text-muted text-xs ml-2">{formatTimeAgo(reply.created_at)}</span>
         </div>
       </div>
       {isAdmin && (
@@ -383,7 +383,7 @@ const ReplyCard = ({ reply, isAdmin, onDelete }) => (
         </button>
       )}
     </div>
-    <p className="text-slate-700 text-sm leading-relaxed">{reply.content}</p>
+    <p className="text-text-primary text-sm leading-relaxed">{reply.content}</p>
   </div>
 );
 
@@ -442,38 +442,38 @@ const ThreadDetail = ({ thread, onBack, user, userProfile, onReplySubmit, isAdmi
 
   return (
     <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
-      <div className="sticky top-0 bg-white border-b border-slate-200 p-4 z-10">
+      <div className="sticky top-0 bg-surface-card border-b border-border-subtle p-4 z-10">
         <button
           onClick={onBack}
-          className="flex items-center text-teal-700 font-bold text-sm mb-3 hover:text-teal-800 transition-colors"
+          className="flex items-center text-brand-primary font-bold text-sm mb-3 hover:opacity-80 transition-all"
         >
           <ArrowLeft size={18} className="mr-1" />
           Back to Forum
         </button>
-        <div className="flex items-center space-x-2 text-xs text-slate-500 mb-2">
-          <span className="font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">{thread.board}</span>
+        <div className="flex items-center space-x-2 text-xs text-text-muted mb-2">
+          <span className="font-bold text-brand-primary bg-brand-accent/20 px-1.5 py-0.5 rounded border border-brand-accent/30">{thread.board}</span>
           <span>• Posted by {thread.author_username} • {formatTimeAgo(thread.created_at)}</span>
         </div>
-        <h1 className="text-xl font-bold text-slate-900">{thread.title}</h1>
+        <h1 className="text-xl font-bold text-text-primary">{thread.title}</h1>
       </div>
 
       <div className="p-4 space-y-4">
         {/* Original Post */}
-        <div className="bg-teal-50 p-4 rounded-lg border border-teal-100">
+        <div className="bg-brand-accent/20 p-4 rounded-lg border border-brand-accent/30">
           <div className="flex items-center space-x-2 mb-3">
-            <div className="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-brand-accent/50 flex items-center justify-center overflow-hidden">
               {thread.author_avatar ? (
                 <img src={thread.author_avatar} alt={thread.author_username} className="w-full h-full object-cover" />
               ) : (
-                <User size={20} className="text-teal-800" />
+                <User size={20} className="text-brand-primary" />
               )}
             </div>
             <div>
-              <span className="font-bold text-slate-900">{thread.author_username}</span>
-              <span className="text-slate-500 text-xs ml-2">{formatTimeAgo(thread.created_at)}</span>
+              <span className="font-bold text-text-primary">{thread.author_username}</span>
+              <span className="text-text-muted text-xs ml-2">{formatTimeAgo(thread.created_at)}</span>
             </div>
           </div>
-          <p className="text-slate-800 leading-relaxed">{thread.content}</p>
+          <p className="text-text-primary leading-relaxed">{thread.content}</p>
         </div>
 
         {/* Replies */}
@@ -507,7 +507,7 @@ const ThreadDetail = ({ thread, onBack, user, userProfile, onReplySubmit, isAdmi
             <button
               type="submit"
               disabled={isSubmitting || !replyContent.trim()}
-              className="mt-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
+              className="mt-2 bg-brand-primary text-text-inverse px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium"
             >
               {isSubmitting ? <Loader size={16} className="animate-spin" /> : <Send size={16} />}
               {isSubmitting ? 'Posting...' : 'Post Reply'}
@@ -527,10 +527,10 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
-        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
+      <div className="bg-surface-card rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+        <div className="p-4 border-b border-border-subtle flex justify-between items-center bg-surface-muted shrink-0">
+          <h3 className="font-bold text-lg text-text-primary flex items-center gap-2">{title}</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-surface-base text-text-muted hover:text-text-primary transition-colors">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
@@ -581,7 +581,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
             placeholder="you@example.com"
             required
           />
@@ -592,7 +592,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
             placeholder="••••••••"
             required
           />
@@ -605,7 +605,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-brand-primary text-text-inverse font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && <Loader size={18} className="animate-spin" />}
           {loading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Sign In')}
@@ -706,14 +706,14 @@ const ProfileEditModal = ({ isOpen, onClose, userProfile, onProfileUpdated }) =>
         {/* Avatar Upload */}
         <div className="flex flex-col items-center">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-teal-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+            <div className="w-24 h-24 rounded-full bg-brand-accent/30 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
               {avatarPreview ? (
                 <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <User size={40} className="text-teal-700" />
+                <User size={40} className="text-brand-primary" />
               )}
             </div>
-            <label className="absolute bottom-0 right-0 bg-teal-600 text-white p-2 rounded-full cursor-pointer hover:bg-teal-700 shadow-lg transition-colors">
+            <label className="absolute bottom-0 right-0 bg-brand-primary text-text-inverse p-2 rounded-full cursor-pointer hover:opacity-90 shadow-lg transition-all">
               <Camera size={16} />
               <input
                 type="file"
@@ -733,7 +733,7 @@ const ProfileEditModal = ({ isOpen, onClose, userProfile, onProfileUpdated }) =>
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
             placeholder="Your display name"
             required
           />
@@ -748,7 +748,7 @@ const ProfileEditModal = ({ isOpen, onClose, userProfile, onProfileUpdated }) =>
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-brand-primary text-text-inverse font-bold py-3 rounded-xl hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && <Loader size={18} className="animate-spin" />}
           {loading ? 'Saving...' : 'Save Profile'}
@@ -792,15 +792,15 @@ const EventDetailModal = ({ isOpen, onClose, event }) => {
 
         {/* Type Badge */}
         <div>
-          <span className="inline-block bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-xs font-bold border border-teal-100">
+          <span className="inline-block bg-brand-accent/20 text-brand-primary px-3 py-1 rounded-full text-xs font-bold border border-brand-accent/30">
             {event.type}
           </span>
         </div>
 
         {/* Description */}
         <div>
-          <div className="text-xs font-bold text-slate-700 uppercase mb-2">About This Event</div>
-          <p className="text-sm text-slate-700 leading-relaxed">
+          <div className="text-xs font-bold text-text-primary uppercase mb-2">About This Event</div>
+          <p className="text-sm text-text-primary leading-relaxed">
             {event.description || event.summary}
           </p>
         </div>
@@ -819,7 +819,7 @@ const EventDetailModal = ({ isOpen, onClose, event }) => {
             href={event.website_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full bg-teal-600 text-white text-center font-bold py-3 rounded-xl hover:bg-teal-700 transition-colors"
+            className="block w-full bg-brand-primary text-text-inverse text-center font-bold py-3 rounded-xl hover:opacity-90 transition-all"
           >
             Visit Website
           </a>
@@ -1224,9 +1224,9 @@ export default function App() {
         return (
           <div className="space-y-8 pb-32 animate-in fade-in duration-300">
             {/* Hero */}
-            <div className="bg-teal-800 text-white p-6 rounded-2xl shadow-lg mx-4 mt-4 relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-teal-700 rounded-full translate-x-10 -translate-y-10 opacity-50"></div>
-               <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-600 rounded-full -translate-x-10 translate-y-10 opacity-30"></div>
+            <div className="bg-brand-primary text-text-inverse p-6 rounded-2xl shadow-lg mx-4 mt-4 relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/70 rounded-full translate-x-10 -translate-y-10 opacity-50"></div>
+               <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-primary/50 rounded-full -translate-x-10 translate-y-10 opacity-30"></div>
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-3">
                   <img src="/logo.png" alt="ByTheWey" className="w-12 h-12 bg-white/10 rounded-xl p-1.5 backdrop-blur" />
@@ -1261,10 +1261,10 @@ export default function App() {
             <div className="px-4">
               <div className="flex justify-between items-center mb-4">
                  <h2 className="text-lg font-bold text-slate-800 flex items-center">
-                  <Calendar className="mr-2 text-teal-600" size={20} />
+                  <Calendar className="mr-2 text-brand-primary" size={20} />
                   Happening Soon
                 </h2>
-                <button onClick={() => setActiveTab('events')} className="text-xs font-bold text-teal-600 flex items-center">View All <ChevronRight size={14}/></button>
+                <button onClick={() => setActiveTab('events')} className="text-xs font-bold text-brand-primary flex items-center">View All <ChevronRight size={14}/></button>
               </div>
 
               <div className="space-y-2">
@@ -1305,10 +1305,10 @@ export default function App() {
             <div className="px-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-bold text-slate-800 flex items-center">
-                  <ThumbsUp className="mr-2 text-teal-600" size={20} />
+                  <ThumbsUp className="mr-2 text-brand-primary" size={20} />
                   Editor's Picks
                 </h2>
-                <button onClick={() => setActiveTab('guide')} className="text-xs font-bold text-teal-600 flex items-center">Open Guide <ChevronRight size={14}/></button>
+                <button onClick={() => setActiveTab('guide')} className="text-xs font-bold text-brand-primary flex items-center">Open Guide <ChevronRight size={14}/></button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                 {PLACES.slice(0, 2).map(place => <PlaceCard key={place.id} place={place} />)}
@@ -1320,13 +1320,13 @@ export default function App() {
       case 'guide':
         return (
           <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
-            <div className="sticky top-0 bg-slate-50/95 backdrop-blur z-10 p-4 border-b border-slate-200 shadow-sm">
+            <div className="sticky top-0 bg-surface-base/95 backdrop-blur z-10 p-4 border-b border-border-subtle shadow-sm">
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+                <Search className="absolute left-3 top-3 text-text-muted" size={18} />
                 <input
                   type="text"
                   placeholder="Find coffee, pubs, plumbers..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface-card border border-border-subtle rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring shadow-sm"
                 />
               </div>
               <div className="flex space-x-2 overflow-x-auto pb-1 no-scrollbar">
@@ -1406,7 +1406,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setShowPastEvents(!showPastEvents)}
-                className="flex items-center text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100"
+                className="flex items-center text-xs font-bold text-brand-primary bg-brand-accent/20 px-3 py-1.5 rounded-full hover:bg-brand-accent/30"
               >
                 {showPastEvents ? 'Hide Past' : 'Show Past'}
               </button>
@@ -1521,17 +1521,17 @@ export default function App() {
 
         return (
           <div className="pb-32 animate-in slide-in-from-right-4 duration-300">
-             <div className="p-4 bg-white border-b border-slate-200">
+             <div className="p-4 bg-surface-card border-b border-border-subtle">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-slate-900">Community</h1>
-                  <p className="text-slate-500 text-sm">Ask locals, get answers. Moderated daily.</p>
+                  <h1 className="text-2xl font-bold text-text-primary">Community</h1>
+                  <p className="text-text-secondary text-sm">Ask locals, get answers. Moderated daily.</p>
                 </div>
                 {user ? (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setIsProfileEditOpen(true)}
-                      className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 border border-teal-200 px-2 py-1 rounded hover:bg-teal-50"
+                      className="flex items-center gap-1 text-xs text-brand-primary hover:opacity-80 border border-brand-accent/30 px-2 py-1 rounded hover:bg-brand-accent/10"
                     >
                       <Settings size={12} />
                       Edit Profile
@@ -1556,14 +1556,14 @@ export default function App() {
               </div>
 
               <div className="flex mt-4 space-x-2 overflow-x-auto no-scrollbar">
-                <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-bold whitespace-nowrap">All Boards</span>
-                <span className="text-xs text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full font-medium hover:bg-slate-50 cursor-pointer whitespace-nowrap">Recs</span>
-                <span className="text-xs text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full font-medium hover:bg-slate-50 cursor-pointer whitespace-nowrap">What's On</span>
-                <span className="text-xs text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full font-medium hover:bg-slate-50 cursor-pointer whitespace-nowrap">Town Talk</span>
+                <span className="text-xs bg-surface-muted text-text-secondary px-3 py-1.5 rounded-full font-bold whitespace-nowrap">All Boards</span>
+                <span className="text-xs text-text-muted border border-border-subtle px-3 py-1.5 rounded-full font-medium hover:bg-surface-muted cursor-pointer whitespace-nowrap">Recs</span>
+                <span className="text-xs text-text-muted border border-border-subtle px-3 py-1.5 rounded-full font-medium hover:bg-surface-muted cursor-pointer whitespace-nowrap">What's On</span>
+                <span className="text-xs text-text-muted border border-border-subtle px-3 py-1.5 rounded-full font-medium hover:bg-surface-muted cursor-pointer whitespace-nowrap">Town Talk</span>
               </div>
             </div>
 
-            <div className="bg-white">
+            <div className="bg-surface-base">
               {loadingThreads ? (
                 <div className="text-center py-12 text-slate-400">
                   <Loader className="animate-spin mx-auto mb-2" size={32} />
@@ -1595,14 +1595,14 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto bg-slate-50 md:shadow-2xl overflow-hidden font-sans md:border-x border-slate-200 relative">
+    <div className="flex flex-col h-screen w-full md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto bg-surface-base text-text-primary md:shadow-2xl overflow-hidden font-sans md:border-x border-border-subtle relative">
 
       {/* Top Header (only for non-home pages to keep home clean) */}
       {activeTab !== 'home' && activeTab !== 'guide' && activeTab !== 'forum' && (
-        <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-10 flex justify-between items-center">
+        <div className="bg-surface-card border-b border-border-subtle p-4 sticky top-0 z-10 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="ByTheWey" className="w-8 h-8" />
-            <span className="font-bold text-teal-800 tracking-tight">bythewey<span className="text-teal-500">.com</span></span>
+            <span className="font-bold text-brand-primary tracking-tight">bythewey<span className="text-brand-accent">.com</span></span>
           </div>
         </div>
       )}
@@ -1622,7 +1622,7 @@ export default function App() {
           setIsSubmitOpen(true);
           setSubmissionType(activeTab === 'events' ? 'event' : activeTab === 'forum' ? 'thread' : 'place');
         }}
-        className="absolute bottom-24 right-4 bg-teal-600 hover:bg-teal-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-teal-900/20 transition-all hover:scale-105 active:scale-95 z-20"
+        className="absolute bottom-24 right-4 bg-brand-primary hover:opacity-90 text-text-inverse rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
         aria-label="Add new"
       >
         <Plus size={28} />
@@ -1630,7 +1630,7 @@ export default function App() {
 
       {/* Bottom Navigation */}
       <div className="absolute bottom-0 w-full z-20">
-        <nav className="bg-white border-t border-slate-200 flex items-center justify-around px-2 pt-2 pb-3">
+        <nav className="bg-surface-card border-t border-border-subtle flex items-center justify-around px-2 pt-2 pb-3">
           <NavItem
             icon={Trees}
             label="Home"
@@ -1657,7 +1657,7 @@ export default function App() {
           />
         </nav>
         {/* Extra padding for Safari URL bar + safe area for home indicator */}
-        <div className="bg-white pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}></div>
+        <div className="bg-surface-card pb-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}></div>
       </div>
 
       {/* Auth Modal */}
@@ -1695,7 +1695,7 @@ export default function App() {
               <select
                 value={newThreadBoard}
                 onChange={(e) => setNewThreadBoard(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
               >
                 <option>Recommendations</option>
                 <option>Town Talk</option>
@@ -1707,7 +1707,7 @@ export default function App() {
               <input
                 value={newThreadTitle}
                 onChange={(e) => setNewThreadTitle(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 placeholder="What's your question?"
               />
             </div>
@@ -1716,14 +1716,14 @@ export default function App() {
               <textarea
                 value={newThreadContent}
                 onChange={(e) => setNewThreadContent(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-24 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-24 focus:outline-none focus:ring-2 focus:ring-focus-ring resize-none"
                 placeholder="Provide more context..."
               />
             </div>
             <button
               onClick={handleCreateThread}
               disabled={!newThreadTitle.trim() || !newThreadContent.trim()}
-              className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-brand-primary text-text-inverse font-bold py-3.5 rounded-xl hover:opacity-90 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Post Thread
             </button>
@@ -1770,7 +1770,7 @@ export default function App() {
               <input
                 value={eventTitle}
                 onChange={(e) => setEventTitle(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 placeholder="e.g. Weybridge Farmers Market"
                 required
               />
@@ -1784,7 +1784,7 @@ export default function App() {
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                   required
                 />
               </div>
@@ -1794,7 +1794,7 @@ export default function App() {
                   type="time"
                   value={eventStartTime}
                   onChange={(e) => setEventStartTime(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
               </div>
               <div className="col-span-2">
@@ -1803,7 +1803,7 @@ export default function App() {
                   type="time"
                   value={eventEndTime}
                   onChange={(e) => setEventEndTime(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 />
               </div>
             </div>
@@ -1815,7 +1815,7 @@ export default function App() {
                 <input
                   value={eventLocation}
                   onChange={(e) => setEventLocation(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                   placeholder="Monument Green"
                   required
                 />
@@ -1825,7 +1825,7 @@ export default function App() {
                 <select
                   value={eventType}
                   onChange={(e) => setEventType(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                 >
                   <option>Market</option>
                   <option>Music</option>
@@ -1846,7 +1846,7 @@ export default function App() {
               <textarea
                 value={eventSummary}
                 onChange={(e) => setEventSummary(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-16 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-16 focus:outline-none focus:ring-2 focus:ring-focus-ring resize-none"
                 placeholder="Brief description (e.g. Fresh produce, artisan bread, and local crafts)"
                 required
               />
@@ -1858,7 +1858,7 @@ export default function App() {
               <textarea
                 value={eventDescription}
                 onChange={(e) => setEventDescription(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-20 focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-20 focus:outline-none focus:ring-2 focus:ring-focus-ring resize-none"
                 placeholder="Additional details, parking info, ticket prices, etc."
               />
             </div>
@@ -1870,7 +1870,7 @@ export default function App() {
                 <input
                   value={eventOrganizerName}
                   onChange={(e) => setEventOrganizerName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                   placeholder="Organization name"
                 />
               </div>
@@ -1880,7 +1880,7 @@ export default function App() {
                   type="url"
                   value={eventWebsiteUrl}
                   onChange={(e) => setEventWebsiteUrl(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-focus-ring"
                   placeholder="https://..."
                 />
               </div>
@@ -1889,7 +1889,7 @@ export default function App() {
             <button
               onClick={handleSubmitEvent}
               disabled={isPolishing || !eventTitle.trim() || !eventDate || !eventLocation.trim() || !eventSummary.trim()}
-              className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-brand-primary text-text-inverse font-bold py-3.5 rounded-xl hover:opacity-90 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isPolishing && <Loader size={18} className="animate-spin" />}
               {isPolishing ? 'Submitting...' : 'Submit Event for Review'}
@@ -1919,7 +1919,7 @@ export default function App() {
               <textarea
                 value={submitDetails}
                 onChange={(e) => setSubmitDetails(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-3 text-sm h-24 focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none"
+                className="w-full bg-surface-card border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-24 focus:outline-none focus:ring-2 focus:ring-focus-ring transition-all resize-none"
                 placeholder="Draft your details here, then hit Magic Polish!"
               />
             </div>
@@ -1929,7 +1929,7 @@ export default function App() {
                 setIsSubmitOpen(false);
                 setSubmitDetails('');
               }}
-              className="w-full bg-teal-600 text-white font-bold py-3.5 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all"
+              className="w-full bg-brand-primary text-text-inverse font-bold py-3.5 rounded-xl hover:opacity-90 shadow-lg shadow-teal-900/10 active:scale-[0.98] transition-all"
             >
               Submit for Review
             </button>
@@ -1957,7 +1957,7 @@ export default function App() {
                <textarea
                  value={plannerQuery}
                  onChange={(e) => setPlannerQuery(e.target.value)}
-                 className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm h-24 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                 className="w-full bg-surface-muted border border-border-subtle rounded-lg p-3 text-sm text-text-primary placeholder:text-text-muted h-24 focus:outline-none focus:ring-2 focus:ring-focus-ring transition-all resize-none"
                  placeholder="I need ideas for..."
                />
                <button
