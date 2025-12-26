@@ -64,6 +64,13 @@ const getGreeting = () => {
   return 'Good evening';
 };
 
+const getTodayDate = () => {
+  const today = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+};
+
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const then = new Date(timestamp);
@@ -1222,52 +1229,34 @@ export default function App() {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-8 pb-32 animate-in fade-in duration-300">
-            {/* Hero */}
-            <div className="bg-brand-primary text-text-inverse p-6 rounded-2xl shadow-lg mx-4 mt-4 relative overflow-hidden">
+          <div className="space-y-6 pb-32 animate-in fade-in duration-300">
+            {/* Hero - Daily Edition */}
+            <div className="bg-brand-primary text-text-inverse p-6 rounded-2xl shadow-lg mx-4 mt-4 relative overflow-hidden hero-texture">
                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/70 rounded-full translate-x-10 -translate-y-10 opacity-50"></div>
                <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-primary/50 rounded-full -translate-x-10 translate-y-10 opacity-30"></div>
               <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-3">
-                  <img src="/logo.png" alt="ByTheWey" className="w-12 h-12 bg-white/10 rounded-xl p-1.5 backdrop-blur" />
-                  <div>
-                    <h1 className="text-2xl font-bold">{getGreeting()}, Weybridge.</h1>
-                    <p className="text-teal-100 opacity-90 text-sm">Here is what's happening in town today.</p>
+                <div className="flex items-center gap-3">
+                  <img src="/logo.png" alt="ByTheWey" className="w-14 h-14 bg-white/10 rounded-xl p-1.5 backdrop-blur shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-text-inverse/70 text-xs font-medium uppercase tracking-wide mb-1">{getTodayDate()}</p>
+                    <h1 className="text-2xl font-bold leading-tight">{getGreeting()}, Weybridge.</h1>
+                    <p className="text-text-inverse/80 text-sm mt-1">Today's picks and what's on soon.</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* AI Planner CTA */}
-            <div className="px-4">
-              <button
-                onClick={() => setIsPlannerOpen(true)}
-                className="w-full bg-gradient-to-r from-purple-100 to-indigo-100 border border-indigo-200 p-4 rounded-xl flex items-center justify-between group shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-center">
-                  <div className="bg-white p-2 rounded-full mr-3 shadow-sm">
-                    <Sparkles className="text-indigo-600" size={20} />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-bold text-indigo-900 text-sm">Plan My Weekend</h3>
-                    <p className="text-indigo-700 text-xs">Ask the AI Concierge for ideas</p>
-                  </div>
-                </div>
-                <ChevronRight className="text-indigo-400 group-hover:translate-x-1 transition-transform" size={20} />
-              </button>
-            </div>
-
-            {/* Quick Links */}
+            {/* What's on soon */}
             <div className="px-4">
               <div className="flex justify-between items-center mb-4">
-                 <h2 className="text-lg font-bold text-slate-800 flex items-center">
-                  <Calendar className="mr-2 text-brand-primary" size={20} />
-                  Happening Soon
-                </h2>
-                <button onClick={() => setActiveTab('events')} className="text-xs font-bold text-brand-primary flex items-center">View All <ChevronRight size={14}/></button>
+                <div>
+                  <h2 className="text-lg font-bold text-text-primary">What's on soon</h2>
+                  <p className="text-text-muted text-xs mt-0.5">Upcoming events in Weybridge</p>
+                </div>
+                <button onClick={() => setActiveTab('events')} className="text-xs font-bold text-brand-primary hover:opacity-80 transition-opacity">View all →</button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {(() => {
                   // Get upcoming approved events
                   const today = new Date();
@@ -1275,12 +1264,23 @@ export default function App() {
                   const upcomingEvents = events
                     .filter(e => e.status === 'approved' && new Date(e.event_date) >= today)
                     .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
-                    .slice(0, 2);
+                    .slice(0, 3);
 
                   if (upcomingEvents.length === 0) {
                     return (
-                      <div className="text-center py-6 text-slate-400">
-                        <p className="text-sm">No upcoming events</p>
+                      <div className="bg-surface-card border border-border-subtle rounded-xl p-6 text-center">
+                        <Calendar className="mx-auto mb-3 text-text-muted opacity-40" size={32} />
+                        <p className="text-text-secondary text-sm mb-3">No upcoming events yet</p>
+                        <button
+                          onClick={() => {
+                            setActiveTab('events');
+                            setIsSubmitOpen(true);
+                            setSubmissionType('event');
+                          }}
+                          className="text-xs font-medium text-brand-primary hover:opacity-80 transition-opacity"
+                        >
+                          Add an event
+                        </button>
                       </div>
                     );
                   }
@@ -1302,17 +1302,83 @@ export default function App() {
               </div>
             </div>
 
+            {/* Editor's Picks */}
             <div className="px-4">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-slate-800 flex items-center">
-                  <ThumbsUp className="mr-2 text-brand-primary" size={20} />
-                  Editor's Picks
-                </h2>
-                <button onClick={() => setActiveTab('guide')} className="text-xs font-bold text-brand-primary flex items-center">Open Guide <ChevronRight size={14}/></button>
+                <div>
+                  <h2 className="text-lg font-bold text-text-primary">Editor's Picks</h2>
+                  <p className="text-text-muted text-xs mt-0.5">Hand-selected local favorites</p>
+                </div>
+                <button onClick={() => setActiveTab('guide')} className="text-xs font-bold text-brand-primary hover:opacity-80 transition-opacity">Open guide →</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                {PLACES.slice(0, 2).map(place => <PlaceCard key={place.id} place={place} />)}
+                {PLACES.length > 0 ? (
+                  PLACES.slice(0, 2).map(place => (
+                    <div key={place.id} className="bg-surface-card rounded-xl border border-border-subtle overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      <div className={`h-24 ${place.bg} relative flex items-center justify-center`}>
+                        <span className="text-text-muted/30 text-4xl font-black uppercase tracking-widest">{place.category}</span>
+                        <div className="absolute top-3 left-3 bg-surface-card/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-text-primary shadow-sm">
+                          {place.category}
+                        </div>
+                        <div className="absolute top-3 right-3 bg-brand-primary text-text-inverse px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                          Edited pick
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-bold text-lg text-text-primary">{place.name}</h3>
+                            <div className="flex items-center text-text-secondary text-sm">
+                              <MapPin size={12} className="mr-1" />
+                              {place.area} • {place.price}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Editorial Summary */}
+                        <div className="bg-brand-accent/20 p-3 rounded-lg mb-3 border border-brand-accent/30">
+                          <p className="text-xs font-bold text-text-secondary uppercase tracking-wide mb-1">Why we like it</p>
+                          <p className="text-sm text-text-primary italic">"{place.summary}"</p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1">
+                          {place.tags.map(tag => (
+                            <span key={tag} className="text-xs px-2 py-1 bg-surface-muted text-text-secondary border border-border-subtle rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full bg-surface-card border border-border-subtle rounded-xl p-6 text-center">
+                    <ThumbsUp className="mx-auto mb-3 text-text-muted opacity-40" size={32} />
+                    <p className="text-text-secondary text-sm">No editor's picks yet</p>
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* AI Concierge - Minor */}
+            <div className="px-4">
+              <button
+                onClick={() => setIsPlannerOpen(true)}
+                className="w-full bg-surface-card border border-border-subtle p-4 rounded-xl flex items-center justify-between group hover:bg-surface-muted transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-surface-muted flex items-center justify-center">
+                    <Sparkles className="text-brand-primary" size={18} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-text-primary text-sm font-medium">Need ideas? Ask the concierge</p>
+                    <p className="text-text-muted text-xs">Get personalized recommendations</p>
+                  </div>
+                </div>
+                <div className="text-xs font-bold text-brand-primary px-3 py-1.5 bg-brand-accent/10 rounded-lg group-hover:bg-brand-accent/20 transition-colors">
+                  Ask
+                </div>
+              </button>
             </div>
           </div>
         );
