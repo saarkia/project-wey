@@ -24,10 +24,12 @@ import {
   Shield,
   Trash2,
   Camera,
-  Settings
+  Settings,
+  Train
 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import Styleguide from './pages/Styleguide';
+import NextTrain from './pages/NextTrain';
 
 /* --- GEMINI API HELPER --- */
 const callGemini = async (prompt, systemInstruction = "") => {
@@ -1952,6 +1954,8 @@ export default function App() {
             </div>
           </div>
         );
+      case 'next-train':
+        return <NextTrain />;
 
       default:
         return null;
@@ -2018,6 +2022,12 @@ export default function App() {
             label="Forum"
             active={activeTab === 'forum'}
             onClick={() => setActiveTab('forum')}
+          />
+          <NavItem
+            icon={Train}
+            label="Next Train"
+            active={activeTab === 'next-train'}
+            onClick={() => setActiveTab('next-train')}
           />
         </nav>
         {/* Extra padding for Safari URL bar + safe area for home indicator */}
