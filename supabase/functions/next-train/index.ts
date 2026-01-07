@@ -150,7 +150,7 @@ serve(async (request) => {
       const platform = service?.platform as string | undefined;
       const operator = (service?.operator as string | undefined) ?? (service?.operatorCode as string | undefined);
       const callingPoint = findCallingPoint(
-        (service?.subsequentCallingPoints as Record<string, unknown> | undefined)?.callingPointList,
+        service?.subsequentCallingPoints,
         destination
       );
       const scheduledArrival = callingPoint?.st;
