@@ -72,7 +72,8 @@ const findCallingPoint = (callingPointLists: unknown, destination: string): Call
 const getServices = (payload: Record<string, unknown>) => {
   const root = payload?.GetStationBoardResult as Record<string, unknown> | undefined;
   const services = (root?.trainServices as Record<string, unknown> | undefined)?.service
-    ?? (payload?.trainServices as Record<string, unknown> | undefined)?.service;
+    ?? (payload?.trainServices as Record<string, unknown> | undefined)?.service
+    ?? payload?.trainServices;
 
   return toArray(services as Record<string, unknown> | Record<string, unknown>[]);
 };

@@ -39,6 +39,7 @@ const NextTrain = () => {
   const [status, setStatus] = useState('idle');
   const [data, setData] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -168,6 +169,30 @@ const NextTrain = () => {
             />
           </label>
         </div>
+      </section>
+
+      {/* Debug Panel */}
+      <section className="bg-surface-card border border-border-subtle rounded-2xl p-4 space-y-3">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="w-full flex items-center justify-between text-sm font-semibold text-text-primary"
+        >
+          <span>🐛 Debug API Response</span>
+          <span className="text-xs">{showDebug ? '▼' : '▶'}</span>
+        </button>
+        {showDebug && data && (
+          <div className="space-y-2">
+            <pre className="bg-surface-muted border border-border-subtle rounded-lg p-3 text-xs overflow-x-auto">
+              {JSON.stringify(data, null, 2)}
+            </pre>
+            <div className="text-xs text-text-muted space-y-1">
+              <p>• Services returned: {data.next || data.alternatives?.length > 0 ? 'YES' : 'NO'}</p>
+              <p>• Max duration filter: {data.maxDurationMins} mins</p>
+              <p>• Time window: {data.timeWindowMins} mins</p>
+              {data.note && <p>• Note: {data.note}</p>}
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">
