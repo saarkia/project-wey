@@ -141,6 +141,7 @@ serve(async (request) => {
 
     const payload = await response.json();
     const services = getServices(payload);
+    console.log(`Found ${services.length} services from API`);
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -153,6 +154,7 @@ serve(async (request) => {
         service?.subsequentCallingPoints,
         destination
       );
+      console.log(`Train ${std}: found calling point for ${destination}?`, callingPoint ? 'YES' : 'NO');
       const scheduledArrival = callingPoint?.st;
       const expectedArrival = callingPoint?.et ?? callingPoint?.at;
       const actualArrival = callingPoint?.at;
@@ -184,6 +186,11 @@ serve(async (request) => {
       .filter((service) => service.scheduledDurationMins !== null && service.scheduledDurationMins <= maxDurationMins)
       .filter((service) => service.relativeDepartureMinutes !== null)
       .sort((a, b) => (a.relativeDepartureMinutes ?? 0) - (b.relativeDepartureMinutes ?? 0));
+
+    console.log(`After filtering: ${eligible.length} eligible trains (max duration: ${maxDurationMins}mins)`);
+    if (eligible.length > 0) {
+      console.log('Eligible trains:', eligible.map(s => `${s.std}->${s.scheduledArrival} (${s.scheduledDurationMins}mins)`));
+    }
 
     const [next, ...rest] = eligible;
 
