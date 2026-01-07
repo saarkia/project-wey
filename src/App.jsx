@@ -356,13 +356,6 @@ const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
   <div onClick={onClick} className="bg-surface-card p-4 border-b border-border-subtle last:border-0 hover:bg-surface-muted cursor-pointer transition-colors">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-brand-accent/30 flex items-center justify-center overflow-hidden flex-shrink-0">
-          {thread.author_avatar ? (
-            <img src={thread.author_avatar} alt={thread.author_username} className="w-full h-full object-cover" />
-          ) : (
-            <User size={16} className="text-brand-primary" />
-          )}
-        </div>
         <div className="flex items-center space-x-2 text-xs text-text-muted">
           <span className="font-bold text-brand-primary bg-brand-accent/20 px-1.5 py-0.5 rounded border border-brand-accent/30">{thread.board}</span>
           <span>• Posted by {thread.author_username}</span>
@@ -384,7 +377,7 @@ const ThreadRow = ({ thread, onClick, isAdmin, onDelete }) => (
     </div>
     <h3 className="font-bold text-text-primary mb-1">{thread.title}</h3>
     <p className="text-text-secondary text-sm mb-2 line-clamp-1">{thread.content}</p>
-    <div className="flex items-center text-text-muted text-xs ml-10">
+    <div className="flex items-center text-text-muted text-xs">
       <MessageSquare size={12} className="mr-1" />
       {thread.reply_count || 0} replies
     </div>
@@ -395,13 +388,6 @@ const ReplyCard = ({ reply, isAdmin, onDelete }) => (
   <div className="bg-surface-card p-4 rounded-lg border border-border-subtle">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-brand-accent/30 flex items-center justify-center overflow-hidden flex-shrink-0">
-          {reply.author_avatar ? (
-            <img src={reply.author_avatar} alt={reply.author_username} className="w-full h-full object-cover" />
-          ) : (
-            <User size={16} className="text-brand-primary" />
-          )}
-        </div>
         <div>
           <span className="font-bold text-text-primary text-sm">{reply.author_username}</span>
           <span className="text-text-muted text-xs ml-2">{formatTimeAgo(reply.created_at)}</span>
@@ -495,13 +481,6 @@ const ThreadDetail = ({ thread, onBack, user, userProfile, onReplySubmit, isAdmi
         {/* Original Post */}
         <div className="bg-brand-accent/20 p-4 rounded-lg border border-brand-accent/30">
           <div className="flex items-center space-x-2 mb-3">
-            <div className="w-10 h-10 rounded-full bg-brand-accent/50 flex items-center justify-center overflow-hidden">
-              {thread.author_avatar ? (
-                <img src={thread.author_avatar} alt={thread.author_username} className="w-full h-full object-cover" />
-              ) : (
-                <User size={20} className="text-brand-primary" />
-              )}
-            </div>
             <div>
               <span className="font-bold text-text-primary">{thread.author_username}</span>
               <span className="text-text-muted text-xs ml-2">{formatTimeAgo(thread.created_at)}</span>
